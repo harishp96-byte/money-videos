@@ -1,5 +1,5 @@
-run 2026-10-02 08:47:33
-FAIL model=gpt-image-2.5-sunburst: APIConnectionError: Connection error.
-FAIL model=gpt-image-2: APIConnectionError: Connection error.
-FAIL model=gpt-image-1.5: APIConnectionError: Connection error.
-FAIL model=gpt-image-1: APIConnectionError: Connection error.
+run 2026-10-02 08:52:27
+FAIL model=gpt-image-2.5-sunburst: AuthenticationError: Error code: 401 - {'error': {'message': 'Incorrect API key provided: sk-proj-*******************************************************************************************************************************************************1UEA. You can find your API key at https://platform.openai.com/account/api-keys.', 'type': 'invalid_request_error', 'code': 'invalid_api_key', 'param': None}, 'status': 401
+FAIL model=gpt-image-2: AuthenticationError: Error code: 401 - {'error': {'message': 'Incorrect API key provided: sk-proj-*******************************************************************************************************************************************************1UEA. You can find your API key at https://platform.openai.com/account/api-keys.', 'type': 'invalid_request_error', 'code': 'invalid_api_key', 'param': None}, 'status': 401
+FAIL model=gpt-image-1.5: AuthenticationError: Error code: 401 - {'error': {'message': 'Incorrect API key provided: sk-proj-*******************************************************************************************************************************************************1UEA. You can find your API key at https://platform.openai.com/account/api-keys.', 'type': 'invalid_request_error', 'code': 'invalid_api_key', 'param': None}, 'status': 401
+FAIL model=gpt-image-1: AuthenticationError: Error code: 401 - {'error': {'message': 'Incorrect API key provided: sk-proj-*******************************************************************************************************************************************************1UEA. You can find your API key at https://platform.openai.com/account/api-keys.', 'type': 'invalid_request_error', 'code': 'invalid_api_key', 'param': None}, 'status': 401
