@@ -1,3 +1,6 @@
+# Renders an episode into English, Hindi and Tamil videos, for free.
+# Starts by itself when an episode's script.yaml changes, or tap
+# Actions -> "Render episode" -> "Run workflow" on your phone.
 name: Render episode
 
 on:

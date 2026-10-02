@@ -1,0 +1,70 @@
+# Test episode: proves the pipeline works end to end (about 40 seconds).
+# Each segment = one scene. "seconds" is the minimum length; if the Hindi
+# voice runs longer, every language version stretches to match, so all
+# three videos keep identical timing.
+
+title: "Where does your salary go?"
+captions: true          # show the spoken line at the bottom of the screen
+
+segments:
+  - id: s1
+    visual: title
+    seconds: 6
+    heading:
+      en: "Where does your salary go?"
+      hi: "आपकी सैलरी कहाँ जाती है?"
+      ta: "உங்கள் சம்பளம் எங்கே போகிறது?"
+    say:
+      en: "Salary comes on the first. By the twentieth, it is gone. Sound familiar?"
+      hi: "एक तारीख को सैलरी आती है, और बीस तारीख तक गायब! जाना-पहचाना लगता है ना?"
+      ta: "ஒன்றாம் தேதி சம்பளம் வருகிறது. இருபதாம் தேதிக்குள் காணாமல் போகிறது. பழக்கமாக இருக்கிறதா?"
+
+  - id: s2
+    visual: split
+    seconds: 10
+    parts: [50, 30, 20]
+    labels:
+      en: ["Needs", "Wants", "Savings"]
+      hi: ["ज़रूरतें", "इच्छाएँ", "बचत"]
+      ta: ["தேவைகள்", "விருப்பங்கள்", "சேமிப்பு"]
+    say:
+      en: "The 50-30-20 rule splits your take-home pay: half for needs, thirty percent for wants, and twenty percent for savings."
+      hi: "पचास-तीस-बीस का नियम कहता है: आधी सैलरी ज़रूरतों के लिए, तीस प्रतिशत इच्छाओं के लिए, और बीस प्रतिशत बचत के लिए।"
+      ta: "ஐம்பது-முப்பது-இருபது விதி: பாதி சம்பளம் தேவைகளுக்கு, முப்பது சதவீதம் விருப்பங்களுக்கு, இருபது சதவீதம் சேமிப்புக்கு."
+
+  - id: s3
+    visual: number
+    seconds: 7
+    value: "₹6,000"
+    caption:
+      en: "20% of a ₹30,000 salary"
+      hi: "₹30,000 सैलरी का 20%"
+      ta: "₹30,000 சம்பளத்தின் 20%"
+    say:
+      en: "On a thirty thousand rupee salary, that is six thousand rupees saved every month."
+      hi: "तीस हज़ार की सैलरी पर, हर महीने छह हज़ार रुपये की बचत।"
+      ta: "முப்பதாயிரம் ரூபாய் சம்பளத்தில், மாதம் ஆறாயிரம் ரூபாய் சேமிப்பு."
+
+  - id: s4
+    visual: bullets
+    seconds: 9
+    items:
+      en: ["Pay yourself first", "Automate on salary day", "Spend what is left"]
+      hi: ["पहले खुद को पे करें", "सैलरी वाले दिन ऑटो-सेव", "जो बचे, वही खर्च करें"]
+      ta: ["முதலில் உங்களுக்கே செலுத்துங்கள்", "சம்பள நாளில் தானியங்கி சேமிப்பு", "மீதியை மட்டும் செலவு செய்யுங்கள்"]
+    say:
+      en: "The trick: save first, on salary day, automatically. Then spend what is left."
+      hi: "तरीका सीधा है: सैलरी वाले दिन पहले बचत, अपने आप। फिर जो बचे, वही खर्च करें।"
+      ta: "வழி எளிது: சம்பள நாளிலேயே முதலில் தானாக சேமியுங்கள். பிறகு மீதியை செலவு செய்யுங்கள்."
+
+  - id: s5
+    visual: outro
+    seconds: 6
+    heading:
+      en: "For education only. Not investment advice."
+      hi: "केवल शिक्षा के लिए। यह निवेश सलाह नहीं है।"
+      ta: "கல்விக்காக மட்டும். இது முதலீட்டு ஆலோசனை அல்ல."
+    say:
+      en: "Subscribe for one simple money lesson every week."
+      hi: "हर हफ्ते एक आसान पैसों का सबक पाने के लिए सब्सक्राइब करें।"
+      ta: "ஒவ்வொரு வாரமும் ஒரு எளிய பண பாடத்திற்கு சப்ஸ்கிரைப் செய்யுங்கள்."

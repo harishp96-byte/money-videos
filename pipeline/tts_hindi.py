@@ -1,72 +1,83 @@
-#!/usr/bin/env python3
-"""tts_hindi.py: speak each segment's Hindi line with Indic Parler-TTS."""
+"""Hindi voiceover with Indic Parler-TTS (AI4Bharat, Apache-2.0).
+
+Reads episodes/<ep>/script.yaml, speaks every segment's Hindi line and writes:
+  out/audio/<segment id>.wav   one file per segment
+  out/durations.json           seconds of speech per segment
+
+Runs on a free GitHub Actions CPU machine. Needs the HF_TOKEN secret because
+the model is gated on Hugging Face (free account, one-time "agree" click).
+"""
+import json
 import os
 import re
-import json
+import sys
 from pathlib import Path
 
-import yaml
-import torch
 import numpy as np
 import soundfile as sf
-from transformers import AutoTokenizer
+import torch
+import yaml
 from parler_tts import ParlerTTSForConditionalGeneration
+from transformers import AutoTokenizer
 
 MODEL = "ai4bharat/indic-parler-tts"
-DEFAULT_VOICE = (
-    "Rohit speaks in a warm, friendly and highly expressive Hindi voice, "
-    "like an elder brother explaining money to a younger friend, at a moderate "
-    "pace with natural pauses. The recording is very clear and close, "
-    "with no background noise."
+
+# The "desi touch": Parler-TTS takes a plain description of how to speak.
+# Edit this line to change the voice (speakers for Hindi: Rohit, Divya).
+VOICE = os.environ.get(
+    "HINDI_VOICE",
+    "Rohit speaks in a warm, friendly and highly expressive Hindi voice, like an "
+    "elder brother explaining money to a younger friend, at a moderate pace with "
+    "natural pauses. The recording is very clear and close, with no background noise.",
 )
 
+GAP = 0.25  # seconds of silence between sentences
 
-def main():
-    episode_dir = Path(os.environ.get("EPISODE_DIR", "."))
-    voice = os.environ.get("VOICE", DEFAULT_VOICE)
-    out_dir = episode_dir / "out"
-    audio_dir = out_dir / "audio"
-    audio_dir.mkdir(parents=True, exist_ok=True)
 
-    with open(episode_dir / "script.yaml", encoding="utf-8") as f:
-        script = yaml.safe_load(f)
-    segments = script["segments"] if isinstance(script, dict) else script
+def sentences(text: str):
+    """Short sentences sound more natural with Parler-TTS."""
+    parts = re.split(r"(?<=[।!?.])\s+", text.strip())
+    return [p for p in parts if p]
 
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    model = ParlerTTSForConditionalGeneration.from_pretrained(MODEL).to(device)
+
+def main(ep_dir: str):
+    ep = Path(ep_dir)
+    script = yaml.safe_load((ep / "script.yaml").read_text(encoding="utf-8"))
+    out = Path("out/audio")
+    out.mkdir(parents=True, exist_ok=True)
+
+    torch.set_num_threads(os.cpu_count() or 4)
+    model = ParlerTTSForConditionalGeneration.from_pretrained(MODEL)
     tok = AutoTokenizer.from_pretrained(MODEL)
     desc_tok = AutoTokenizer.from_pretrained(model.config.text_encoder._name_or_path)
-    sr = model.config.sampling_rate
+    rate = model.config.sampling_rate
+    desc = desc_tok(VOICE, return_tensors="pt")
+    gap = np.zeros(int(GAP * rate), dtype=np.float32)
 
-    desc_ids = desc_tok(voice, return_tensors="pt").to(device)
-    gap = np.zeros(int(0.25 * sr), dtype=np.float32)
     durations = {}
-
-    for seg in segments:
-        text = (seg.get("say") or {}).get("hi", "").strip()
-        if not text:
+    for seg in script["segments"]:
+        line = seg.get("say", {}).get("hi", "")
+        if not line:
             continue
-        sentences = [s.strip() for s in re.split(r"(?<=[।!?.])\s*", text) if s.strip()]
         pieces = []
-        for s in sentences:
-            prompt = tok(s, return_tensors="pt").to(device)
+        for s in sentences(line):
+            print(f"[{seg['id']}] {s}", flush=True)
+            p = tok(s, return_tensors="pt")
             with torch.no_grad():
-                gen = model.generate(
-                    input_ids=desc_ids.input_ids,
-                    attention_mask=desc_ids.attention_mask,
-                    prompt_input_ids=prompt.input_ids,
-                    prompt_attention_mask=prompt.attention_mask,
+                wav = model.generate(
+                    input_ids=desc.input_ids,
+                    attention_mask=desc.attention_mask,
+                    prompt_input_ids=p.input_ids,
+                    prompt_attention_mask=p.attention_mask,
                 )
-            pieces.append(gen.cpu().numpy().squeeze().astype(np.float32))
-            pieces.append(gap)
+            pieces += [wav.cpu().numpy().squeeze().astype(np.float32), gap]
         audio = np.concatenate(pieces)
-        sf.write(str(audio_dir / f"{seg['id']}.wav"), audio, sr)
-        durations[seg["id"]] = round(len(audio) / sr, 2)
-        print(f"spoke {seg['id']}: {durations[seg['id']]}s")
+        sf.write(out / f"{seg['id']}.wav", audio, rate)
+        durations[seg["id"]] = round(len(audio) / rate, 2)
 
-    with open(out_dir / "durations.json", "w") as f:
-        json.dump(durations, f, indent=2)
+    Path("out/durations.json").write_text(json.dumps(durations, indent=2))
+    print("durations:", durations)
 
 
 if __name__ == "__main__":
-    main()
+    main(sys.argv[1])
