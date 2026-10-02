@@ -87,8 +87,16 @@ class Fonts:
         return self.cache[key]
 
 
+# Hindi videos: Hindi voice, but English (or Hinglish) words on screen.
+# Add a "hinglish:" line next to en/hi in script.yaml to use Hinglish instead.
+SCREEN_TEXT = {"hi": ["hinglish", "en"]}
+
+
 def pick(field, lang):
     if isinstance(field, dict):
+        for k in SCREEN_TEXT.get(lang, []):
+            if field.get(k):
+                return field[k]
         return field.get(lang) or field.get("en") or ""
     return field or ""
 
@@ -372,7 +380,8 @@ def srt_time(t):
 def main(ep_dir, lang):
     ep = Path(ep_dir)
     script = yaml.safe_load((ep / "script.yaml").read_text(encoding="utf-8"))
-    fonts = Fonts(lang)
+    text_lang = "en" if lang in SCREEN_TEXT else lang
+    fonts = Fonts(text_lang)
     segs = script["segments"]
     title = (pick(script.get("short_title"), lang)
              or pick(next((s.get("heading") for s in segs if s.get("visual") == "title"), None), lang)
@@ -381,7 +390,7 @@ def main(ep_dir, lang):
     plan, audio = plan_timeline(script, ep, lang)
     total = audio["total"]
     band = BAND[sum(map(ord, ep.name)) % len(BAND)]
-    base = make_base(title, lang, fonts, band)
+    base = make_base(title, text_lang, fonts, band)
     scenes = [prepare_scene(find_image(ep, p["seg"]), p["seg"], i, lang, fonts) for i, p in enumerate(plan)]
     cues = [(s, e, x) for p in plan for (s, e, x) in p["cues"]]
     cap_layers = [make_caption(x, fonts) for _, _, x in cues]

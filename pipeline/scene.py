@@ -26,7 +26,9 @@ DUR = {}
 if os.environ.get("DURATIONS") and Path(os.environ["DURATIONS"]).exists():
     DUR = json.loads(Path(os.environ["DURATIONS"]).read_text())
 
-FONT = {"en": "Noto Sans", "hi": "Noto Sans Devanagari", "ta": "Noto Sans Tamil"}[LANG]
+# Hindi video: Hindi voice only, English (or Hinglish) text on screen.
+TEXT_LANG = {"hi": "en"}.get(LANG, LANG)
+FONT = {"en": "Noto Sans", "ta": "Noto Sans Tamil"}[TEXT_LANG]
 
 # Bright, saturated palette on a deep background: the "mesmerising" look.
 BG = "#1B1036"
@@ -37,7 +39,11 @@ config.background_color = BG
 
 def t(field):
     """Pick this language's text from a {en, hi, ta} field."""
-    return field.get(LANG) or field.get("en") if isinstance(field, dict) else field
+    if not isinstance(field, dict):
+        return field
+    if LANG == "hi" and field.get("hinglish"):
+        return field["hinglish"]
+    return field.get(TEXT_LANG) or field.get("en")
 
 
 def txt(s, size=48, color=INK, weight="BOLD"):
