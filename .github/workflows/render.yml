@@ -1,0 +1,98 @@
+name: Render episode
+
+on:
+  push:
+    paths: ["episodes/**"]
+  workflow_dispatch:
+    inputs:
+      episode:
+        description: "Episode folder (leave blank for the newest)"
+        required: false
+        default: ""
+
+concurrency:
+  group: render
+  cancel-in-progress: true
+
+jobs:
+  pick:
+    runs-on: ubuntu-24.04
+    outputs:
+      ep: ${{ steps.p.outputs.ep }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: p
+        run: |
+          EP="${{ github.event.inputs.episode }}"
+          if [ -z "$EP" ]; then EP=$(ls episodes | sort | tail -1); fi
+          echo "Episode: $EP"
+          echo "ep=$EP" >> "$GITHUB_OUTPUT"
+
+  hindi-voice:
+    needs: pick
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    env:
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - name: Cache the voice model
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: indic-parler-tts-v1
+      - name: Install voice tools
+        if: env.HF_TOKEN != ''
+        run: |
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install git+https://github.com/huggingface/parler-tts.git soundfile pyyaml
+      - name: Speak the Hindi lines
+        if: env.HF_TOKEN != ''
+        run: python pipeline/tts_hindi.py "episodes/${{ needs.pick.outputs.ep }}"
+      - name: No token yet - skip Hindi voice
+        if: env.HF_TOKEN == ''
+        run: |
+          echo "::warning::HF_TOKEN secret not set, so the Hindi video will be silent. See README step 3."
+          mkdir -p out/audio && echo '{}' > out/durations.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: voice
+          path: out/
+          retention-days: 3
+
+  render:
+    needs: [pick, hindi-voice]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        lang: [en, hi, ta]
+    env:
+      EPISODE_DIR: episodes/${{ needs.pick.outputs.ep }}
+      LANG_CODE: ${{ matrix.lang }}
+      DURATIONS: out/durations.json
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with: { name: voice, path: out/ }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - name: Install animation tools and Indian fonts
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libcairo2-dev libpango1.0-dev pkg-config ffmpeg fonts-noto-core
+          pip install "manim==0.19.0" pyyaml soundfile numpy
+      - name: Render animation
+        run: manim render -r 1920,1080 --fps 30 --media_dir out/media -o "${LANG_CODE}" pipeline/scene.py Episode
+      - name: Add voice / read-along
+        run: |
+          VIDEO=$(find out/media -name "${LANG_CODE}.mp4" | head -1)
+          python pipeline/finish.py "$EPISODE_DIR" "$LANG_CODE" "$VIDEO"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ needs.pick.outputs.ep }}-${{ matrix.lang }}
+          path: out/final/
+          retention-days: 14
