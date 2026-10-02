@@ -52,7 +52,9 @@ def finish_one(ep_dir, lang, video, suffix, readalong=True):
     target = final / f"{name}_{lang}{suffix}.mp4"
     times = seg_times(script, durations)
 
-    if lang == "hi" and durations:
+    vl = Path("out/voice_lang.txt")
+    voiced = vl.read_text().strip() if vl.exists() else "hi"
+    if lang == voiced and durations:
         rate = None
         length = sum(total for _, _, total in times)
         track = None

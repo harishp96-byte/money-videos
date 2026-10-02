@@ -1,5 +1,7 @@
-# Renders an episode into English, Hindi and Tamil videos, for free.
-# Starts by itself when an episode's script.yaml changes, or tap
+# Renders an episode as a voiced cartoon, for free.
+# English only for now (Tamil and Hindi come later: add them to LANGS and the
+# render matrix once the English version looks right).
+# Starts by itself when an episode's files change, or tap
 # Actions -> "Render episode" -> "Run workflow" on your phone.
 name: Render episode
 
@@ -17,6 +19,9 @@ concurrency:
   group: render
   cancel-in-progress: true
 
+permissions:
+  contents: write
+
 jobs:
   pick:
     runs-on: ubuntu-24.04
@@ -31,12 +36,14 @@ jobs:
           echo "Episode: $EP"
           echo "ep=$EP" >> "$GITHUB_OUTPUT"
 
-  hindi-voice:
+  # English voiceover (Kokoro-82M, free, Apache-2.0). Gives word timings for
+  # the captions and a loudness curve for the boy's mouth.
+  voice:
     needs: pick
     runs-on: ubuntu-24.04
-    timeout-minutes: 180
+    timeout-minutes: 60
     env:
-      HF_TOKEN: ${{ secrets.HF_TOKEN }}
+      EP_DIR: episodes/${{ needs.pick.outputs.ep }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -45,20 +52,15 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/huggingface
-          key: indic-parler-tts-v1
+          key: kokoro-82m-v1
       - name: Install voice tools
-        if: env.HF_TOKEN != ''
         run: |
+          sudo apt-get update
+          sudo apt-get install -y espeak-ng ffmpeg
           pip install torch --index-url https://download.pytorch.org/whl/cpu
-          pip install git+https://github.com/huggingface/parler-tts.git soundfile pyyaml
-      - name: Speak the Hindi lines
-        if: env.HF_TOKEN != ''
-        run: python pipeline/tts_hindi.py "episodes/${{ needs.pick.outputs.ep }}"
-      - name: No token yet - skip Hindi voice
-        if: env.HF_TOKEN == ''
-        run: |
-          echo "::warning::HF_TOKEN secret not set, so the Hindi video will be silent. See README step 3."
-          mkdir -p out/audio && echo '{}' > out/durations.json
+          pip install "kokoro>=0.9.4" soundfile pyyaml numpy
+      - name: Speak the English lines
+        run: python pipeline/tts_en.py "$EP_DIR"
       - uses: actions/upload-artifact@v4
         with:
           name: voice
@@ -66,13 +68,13 @@ jobs:
           retention-days: 3
 
   render:
-    needs: [pick, hindi-voice]
+    needs: [pick, voice]
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
-        lang: [en, hi, ta]
+        lang: [en]
     env:
       EPISODE_DIR: episodes/${{ needs.pick.outputs.ep }}
       LANG_CODE: ${{ matrix.lang }}
@@ -83,19 +85,27 @@ jobs:
         with: { name: voice, path: out/ }
       - uses: actions/setup-python@v5
         with: { python-version: "3.11" }
-      - name: Install cartoon tools and Indian fonts
+      - name: Install cartoon tools and fonts
         run: |
           sudo apt-get update
           sudo apt-get install -y ffmpeg fonts-noto-core libraqm0
           pip install pillow pyyaml soundfile numpy scipy
       - name: Render cartoon (16:9 video + 9:16 Short)
         run: python pipeline/cartoon.py "$EPISODE_DIR" "$LANG_CODE"
-      - name: Add voice / read-along
-        run: |
-          VIDEO=out/media/cartoon/${LANG_CODE}.mp4
-          python pipeline/finish.py "$EPISODE_DIR" "$LANG_CODE" "$VIDEO"
+      - name: Add voice
+        run: python pipeline/finish.py "$EPISODE_DIR" "$LANG_CODE" out/media/cartoon/${LANG_CODE}.mp4
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ needs.pick.outputs.ep }}-${{ matrix.lang }}
           path: out/final/
           retention-days: 14
+      # Also keep the newest videos on the "previews" branch so Claude can
+      # open and check them (GitHub artifacts need a login).
+      - name: Save preview copy
+        run: |
+          mkdir -p /tmp/p && cp out/final/*.mp4 /tmp/p/
+          cd /tmp/p
+          git init -q -b previews
+          git config user.name "render-bot"; git config user.email "render-bot@users.noreply.github.com"
+          git add . && git commit -q -m "Preview: ${{ needs.pick.outputs.ep }} ${{ matrix.lang }} (${GITHUB_SHA::7})"
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" previews

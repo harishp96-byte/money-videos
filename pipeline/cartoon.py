@@ -51,6 +51,16 @@ if os.environ.get("DURATIONS") and Path(os.environ["DURATIONS"]).exists():
     DUR = json.loads(Path(os.environ["DURATIONS"]).read_text())
 TEXT_LANG = {"hi": "en"}.get(LANG, LANG)   # Hindi: Hindi voice, English text
 
+# Voiceover data from tts_en.py: word timings + loudness per segment, used for
+# caption timing and lip movement. Only applies to the language that was voiced.
+VOICE = {}
+_vl = Path("out/voice_lang.txt")
+if Path("out/voice.json").exists() and _vl.exists() and _vl.read_text().strip() == LANG:
+    VOICE = json.loads(Path("out/voice.json").read_text())
+VOICE_LEAD = 0.3          # finish.py starts each line 0.3 s into its scene
+SEG_START = {}            # segment id -> start time (filled in main)
+NOW = [0.0]               # current video time, for lip sync
+
 
 def t(field):
     if not isinstance(field, dict):
@@ -448,9 +458,23 @@ def boy(pose, mouth="open"):
     return out
 
 
+def voice_level(tm):
+    for sid, v in VOICE.items():
+        st = SEG_START.get(sid)
+        if st is None:
+            continue
+        i = int((tm - st - VOICE_LEAD) * FPS)
+        if 0 <= i < len(v["env"]):
+            return v["env"][i]
+    return 0.0
+
+
 def talk_state(local, talking, seed=0):
     if not talking:
         return "closed"
+    if VOICE:
+        lv = voice_level(NOW[0])
+        return "open" if lv > 0.45 else "mid" if lv > 0.18 else "closed"
     k = int(local * 9) + seed
     return ("open", "mid", "open", "closed", "mid", "open", "mid", "closed")[k % 8]
 
@@ -756,6 +780,22 @@ def caption_chunks(seg, start, T):
             cur = []
     if cur:
         chunks.append(" ".join(cur))
+    v = VOICE.get(seg["id"])
+    if v and v["words"]:
+        out, cur, st = [], [], None
+        for a, b, w_ in v["words"]:
+            if not cur:
+                st = a
+            cur.append(w_)
+            if len(cur) >= per or w_[-1:] in ".?!,:;":
+                out.append([start + VOICE_LEAD + st, start + VOICE_LEAD + b, caps(" ".join(cur))])
+                cur = []
+        if cur:
+            out.append([start + VOICE_LEAD + st, start + VOICE_LEAD + v["words"][-1][1], caps(" ".join(cur))])
+        for k in range(len(out) - 1):          # hold each chunk until the next one
+            out[k][1] = out[k + 1][0]
+        out[-1][1] = min(start + T, out[-1][1] + 0.5)
+        return [tuple(c) for c in out]
     lead, tail = 0.25, 0.35
     span = max(0.5, T - lead - tail)
     total = sum(len(c) for c in chunks)
@@ -836,6 +876,7 @@ def main():
     timeline, caps_list, g = [], [], 0.0
     for seg in SCRIPT["segments"]:
         T = seg_time(seg)
+        SEG_START[seg["id"]] = g
         for sh in make_shots(seg, T, g):
             timeline.append((g, sh))
             if sh.cut_sfx and g > 0:
@@ -866,6 +907,7 @@ def main():
             si += 1
         g0, sh = timeline[si]
         local = tm - g0
+        NOW[0] = tm
         panel = sh.fn(local, sh.dur, g0)
         if local < 0.12:                 # punch-in on every cut
             panel = camera(panel, 1.0 + 0.05 * (1 - local / 0.12))

@@ -6,6 +6,8 @@
 title: "Where does your salary go?"
 ep: 0                   # episode number for the Short title ("EP 0: ...")
 captions: true          # show the spoken line at the bottom of the screen
+# English AI voice (Kokoro). pitch above 1 = younger-sounding boy; speed 1 = normal.
+voice_en: {voice: af_heart, speed: 1.0, pitch: 1.12}
 
 segments:
   - id: s1

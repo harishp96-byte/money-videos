@@ -14,6 +14,14 @@ videos. The Hindi one comes back already voiced.
 
 To re-run by hand: Actions → Render episode → **Run workflow**.
 
+## Right now: English only, with an AI voice
+The render currently makes only the English video, voiced for free by
+Kokoro-82M (`pipeline/tts_en.py`). The voice also sets the timing: captions
+appear word-group by word-group as they are spoken and the boy's mouth moves
+with the loudness of the voice. Change the voice in `script.yaml`
+(`voice_en: {voice, speed, pitch}`). Tamil and Hindi come back once English
+looks right. The newest videos are also copied to the `previews` branch.
+
 ## House style (cartoon, like the reference Short)
 `pipeline/cartoon.py` makes every video look like the kids' cartoon Short we
 picked as the reference: the boy from `assets/characters/boy_v1_sheet.png`
