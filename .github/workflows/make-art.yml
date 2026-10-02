@@ -1,0 +1,36 @@
+# Makes ONE picture with OpenAI (costs a few cents). Run by hand: Actions -> Make art -> Run workflow.
+name: Make art
+on:
+  workflow_dispatch:
+    inputs:
+      scene:
+        description: "What the picture shows"
+        required: true
+        default: "The boy stands in a colourful Indian kirana shop, holding a snack packet and looking curious. Full scene, wide shot."
+      out_name:
+        description: "File name (no spaces)"
+        required: true
+        default: "test_kirana"
+permissions:
+  contents: write
+jobs:
+  art:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip install openai
+      - name: Make picture
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          SCENE: ${{ github.event.inputs.scene }}
+          OUT_NAME: ${{ github.event.inputs.out_name }}
+        run: python pipeline/make_art.py
+      - name: Save results into the repo
+        if: always()
+        run: |
+          git config user.name "art-bot"; git config user.email "art-bot@users.noreply.github.com"
+          git add assets/generated
+          git commit -m "Generated art: ${{ github.event.inputs.out_name }}" || echo "nothing to commit"
+          git pull --rebase origin main && git push origin HEAD:main
