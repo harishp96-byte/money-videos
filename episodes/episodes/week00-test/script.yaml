@@ -1,0 +1,73 @@
+title: Money Basics (Test)
+captions: true
+
+segments:
+  - id: s1
+    visual: title
+    heading:
+      en: "Money Basics"
+      hi: "पैसे की बेसिक बातें"
+      ta: "பணத்தின் அடிப்படை"
+    say:
+      en: "Welcome! Let's learn how to handle money, the simple way."
+      hi: "नमस्ते! आज हम सीखेंगे पैसे को सही तरीके से कैसे संभालें।"
+      ta: "வணக்கம்! பணத்தை எளிதாக எப்படி கையாளுவது என்று பார்க்கலாம்."
+    seconds: 5
+
+  - id: s2
+    visual: split
+    heading:
+      en: "The 50/30/20 Rule"
+      hi: "50/30/20 का नियम"
+      ta: "50/30/20 விதி"
+    parts: [50, 30, 20]
+    labels:
+      en: ["Needs", "Wants", "Savings"]
+      hi: ["ज़रूरतें", "शौक", "बचत"]
+      ta: ["தேவைகள்", "விருப்பங்கள்", "சேமிப்பு"]
+    say:
+      en: "Split your income: fifty percent needs, thirty percent wants, twenty percent savings."
+      hi: "अपनी कमाई बाँटिए: पचास प्रतिशत ज़रूरतों पर, तीस शौक पर, और बीस बचत में।"
+      ta: "உங்கள் வருமானத்தை பிரியுங்கள்: ஐம்பது சதவீதம் தேவைகள், முப்பது விருப்பங்கள், இருபது சேமிப்பு."
+    seconds: 8
+
+  - id: s3
+    visual: number
+    heading:
+      en: "On a ₹30,000 salary, save"
+      hi: "₹30,000 की सैलरी में बचाइए"
+      ta: "₹30,000 சம்பளத்தில் சேமியுங்கள்"
+    value: "₹6,000"
+    say:
+      en: "That means six thousand rupees saved every month."
+      hi: "यानी हर महीने छह हज़ार रुपये की बचत।"
+      ta: "அதாவது மாதம் ஆறாயிரம் ரூபாய் சேமிப்பு."
+    seconds: 6
+
+  - id: s4
+    visual: bullets
+    heading:
+      en: "4 Quick Tips"
+      hi: "4 आसान टिप्स"
+      ta: "4 எளிய குறிப்புகள்"
+    items:
+      en: ["Pay yourself first", "Track every expense", "Build an emergency fund", "Start small, stay regular"]
+      hi: ["पहले खुद को पेमेंट करें", "हर खर्च लिखें", "इमरजेंसी फंड बनाएँ", "छोटे से शुरू करें, नियमित रहें"]
+      ta: ["முதலில் உங்களுக்கே சேமியுங்கள்", "ஒவ்வொரு செலவையும் குறியுங்கள்", "அவசர நிதி உருவாக்குங்கள்", "சிறியதாக தொடங்குங்கள், தொடர்ந்து செய்யுங்கள்"]
+    say:
+      en: "Pay yourself first, track expenses, build an emergency fund, and stay regular."
+      hi: "पहले खुद के लिए बचाएँ, खर्च लिखें, इमरजेंसी फंड बनाएँ, और नियमित रहें।"
+      ta: "முதலில் சேமியுங்கள், செலவுகளை குறியுங்கள், அவசர நிதி உருவாக்குங்கள், தொடர்ந்து செய்யுங்கள்."
+    seconds: 10
+
+  - id: s5
+    visual: outro
+    heading:
+      en: "Subscribe for more!"
+      hi: "और जानने के लिए सब्सक्राइब करें!"
+      ta: "மேலும் அறிய சப்ஸ்கிரைப் செய்யுங்கள்!"
+    say:
+      en: "This is education, not investment advice. Subscribe for more!"
+      hi: "यह सिर्फ़ शिक्षा है, निवेश की सलाह नहीं। और वीडियो के लिए सब्सक्राइब करें!"
+      ta: "இது கல்வி மட்டுமே, முதலீட்டு ஆலோசனை அல்ல. மேலும் பார்க்க சப்ஸ்கிரைப் செய்யுங்கள்!"
+    seconds: 5
