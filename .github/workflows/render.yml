@@ -99,3 +99,47 @@ jobs:
           name: ${{ needs.pick.outputs.ep }}-${{ matrix.lang }}
           path: out/final/
           retention-days: 14
+
+  # Vertical 9:16 Short / Reel: title band, zooming scene picture, popping
+  # captions, disclaimer. Uses helpers borrowed from MoneyPrinterTurbo (MIT).
+  short:
+    needs: [pick, hindi-voice]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        lang: [en, hi, ta]
+    env:
+      EPISODE_DIR: episodes/${{ needs.pick.outputs.ep }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with: { name: voice, path: out/ }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - name: Install tools and Indian fonts
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg fonts-noto-core fontconfig
+          pip install pillow pyyaml
+      - name: Your own voice found? Install Whisper for caption timing
+        id: voice
+        run: |
+          if ls "$EPISODE_DIR"/voice_${{ matrix.lang }}.* >/dev/null 2>&1; then
+            echo "found=yes" >> "$GITHUB_OUTPUT"
+            pip install faster-whisper
+          fi
+      - name: Cache the Whisper model
+        if: steps.voice.outputs.found == 'yes'
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: whisper-small-v1
+      - name: Make the Short
+        run: python pipeline/make_short.py "$EPISODE_DIR" ${{ matrix.lang }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ needs.pick.outputs.ep }}-${{ matrix.lang }}-short
+          path: out/final/
+          retention-days: 14
