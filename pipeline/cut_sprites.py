@@ -45,11 +45,39 @@ def cut(img):
     return out.crop(out.getbbox())
 
 
+def clean_ground(sprite):
+    """Full-body poses: drop the sheet's white gap between the legs and the grey
+    floor smudge under the shoes. They looked like a paper cut-out on screen.
+    The renderer draws its own floor shadow instead."""
+    a = np.asarray(sprite).astype(int)
+    rgb, al = a[..., :3], a[..., 3]
+    h, w = al.shape
+    light = (rgb.min(axis=2) > 170) & ((rgb.max(axis=2) - rgb.min(axis=2)) < 35) & (al > 0)
+    lab, _ = ndimage.label(light)
+    drop = np.zeros_like(light)
+    for i, sl in enumerate(ndimage.find_objects(lab)):
+        comp = lab == i + 1
+        ys, xs = np.nonzero(comp)
+        if len(ys) < 60:
+            continue
+        if ys.mean() > h * 0.7 and abs(xs.mean() - w / 2) < w * 0.17:   # between the legs
+            drop |= comp
+        elif ys.min() > h - 25:                                          # floor smudge
+            drop |= comp
+    drop = ndimage.binary_dilation(drop, iterations=1)
+    new_a = np.where(drop, 0, al).astype(np.uint8)
+    out = sprite.copy()
+    out.putalpha(Image.fromarray(new_a).filter(ImageFilter.GaussianBlur(0.6)))
+    return out.crop(out.getbbox())
+
+
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
     sheet = Image.open(SHEET)
     for name, box in BOXES.items():
         sprite = cut(sheet.crop(box))
+        if name in ("stand", "turn"):
+            sprite = clean_ground(sprite)
         sprite.save(OUT / f"{name}.png")
         print(name, sprite.size)
 

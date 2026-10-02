@@ -41,6 +41,7 @@ segments:
     visual: number
     seconds: 7
     value: "₹6,000"
+    total: "₹30,000"        # shown on the stack of notes the savings come from
     caption:
       en: "20% of a ₹30,000 salary"
       hi: "₹30,000 सैलरी का 20%"
@@ -53,6 +54,7 @@ segments:
   - id: s4
     visual: bullets
     seconds: 9
+    icons: [piggy, phone, bag]   # prop acted out for each tip (piggy | phone | bag)
     items:
       en: ["Pay yourself first", "Automate on salary day", "Spend what is left"]
       hi: ["पहले खुद को पे करें", "सैलरी वाले दिन ऑटो-सेव", "जो बचे, वही खर्च करें"]

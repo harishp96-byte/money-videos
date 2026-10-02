@@ -22,20 +22,42 @@ with the loudness of the voice. Change the voice in `script.yaml`
 (`voice_en: {voice, speed, pitch}`). Tamil and Hindi come back once English
 looks right. The newest videos are also copied to the `previews` branch.
 
-## House style (cartoon, like the reference Short)
-`pipeline/cartoon.py` makes every video look like the kids' cartoon Short we
-picked as the reference: the boy from `assets/characters/boy_v1_sheet.png`
-in drawn rooms, quick cuts every 1-2 s (title cards, wide shots, close-up
-reactions), moving props (cash, calendar, coin jars, piggy bank, chalkboard),
-mouth flaps while he talks, short all-caps captions and light sound effects.
-Each render gives two files per language:
-- `<week>_<lang>.mp4`: 16:9 long video, captions at the bottom
-- `<week>_<lang>_short.mp4`: 9:16 Short/Reel, with a black frame, a yellow
-  "EP n: title" line, the cartoon panel in the middle and the caption under it
+## House style (cartoon, v2: "grounded, full-frame")
+`pipeline/cartoon.py` makes every video look like a small Indian 2D cartoon
+show, not a slideshow: the boy from `assets/characters/boy_v1_sheet.png` lives
+inside drawn rooms, with quick cuts every 1-2 s (title cards, wide shots,
+close-up reactions) and light sound effects. Each render gives two files per
+language, each composed for its own shape:
+- `<week>_<lang>.mp4`: 16:9 long video
+- `<week>_<lang>_short.mp4`: 9:16 Short/Reel that fills the whole frame. A
+  small "EP n + title" pill sits at the top; captions sit in the lower third,
+  inside the Shorts safe area, and move above his face in close-ups.
+
+What keeps the boy from looking like a sticker:
+- He stands on the floor: soft contact shadow under his shoes, a long shadow
+  falling away from the window, warm room light on him with a rim of window
+  light, and his size follows the floor perspective.
+- The room is in layers (room, actors, blurred foreground leaves) and the
+  camera moves them at different speeds, so it feels 2.5D. Close shots blur
+  the room a little.
+- He is never frozen: breathing, blinking every few seconds, a sway while he
+  talks, step-bob when he walks in, a squash when he lands, mouth flaps.
+- Ideas are acted out with props on tables and floors: the salary envelope's
+  notes fly into three labelled jars (50/30/20); notes from a ₹30,000 stack
+  turn into coins for the piggy bank while the counter rises to ₹6,000; tips
+  get their own prop (piggy, phone with an auto-save switch, shopping bag).
+- Captions are word-by-word: the word being spoken turns yellow.
 
 Script extras: `ep:` (episode number), `calendar: ["1", "20"]` and
-`mood: sad|wow|think|happy` on a title scene. Poses are cut from the sheet
-by `python pipeline/cut_sprites.py` (run again if the sheet changes).
+`mood: sad|wow|think|happy` on a title scene, `total: "₹30,000"` on a number
+scene (label on the stack of notes), `icons: [piggy, phone, bag]` on a bullets
+scene (one prop per tip). Poses are cut from the sheet by
+`python pipeline/cut_sprites.py` (run again if the sheet changes; it also
+removes the sheet's white gap between his legs).
+
+Render by hand: `python pipeline/cartoon.py episodes/<week> ta` (add
+`--preview 10` for the first 10 s, `--only short` for just the Short).
+It uses every CPU core (`RENDER_JOBS=2` to limit).
 
 ## Older Shorts maker (not run by default)
 `pipeline/make_short.py` is the earlier picture-slideshow Short. The render
@@ -79,7 +101,7 @@ Without the token everything still renders; the Hindi video is just silent.
 | `episodes/*/script.yaml` | One episode: scenes, on-screen text and lines in 3 languages |
 | `pipeline/tts_hindi.py` | Hindi voice. Change `VOICE` to change the tone |
 | `pipeline/cartoon.py` | The cartoon engine: 16:9 video + 9:16 Short |
-| `pipeline/cut_sprites.py` | Cuts the boy's poses out of the character sheet |
+| `pipeline/cut_sprites.py` | Cuts the boy's poses out of the character sheet and cleans them |
 | `pipeline/scene.py` | Old slide-style engine (Manim), no longer used |
 | `pipeline/finish.py` | Adds Hindi voice; writes read-along files |
 | `pipeline/make_short.py` | Vertical Short/Reel with captions |
