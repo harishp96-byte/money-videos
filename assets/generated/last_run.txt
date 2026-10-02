@@ -1,0 +1,5 @@
+run 2026-10-02 08:47:33
+FAIL model=gpt-image-2.5-sunburst: APIConnectionError: Connection error.
+FAIL model=gpt-image-2: APIConnectionError: Connection error.
+FAIL model=gpt-image-1.5: APIConnectionError: Connection error.
+FAIL model=gpt-image-1: APIConnectionError: Connection error.
