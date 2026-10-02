@@ -27,6 +27,21 @@ def seg_times(script, durations):
 
 
 def main(ep_dir, lang, video):
+    """video: the 16:9 render. A matching <lang>_short.mp4 next to it is
+    finished the same way (cartoon renderer makes both)."""
+    short = Path(video).with_name(Path(video).stem + "_short.mp4")
+    finish_one(ep_dir, lang, video, "")
+    if short.exists():
+        finish_one(ep_dir, lang, str(short), "_short", readalong=False)
+
+
+def has_audio(video):
+    r = subprocess.run(["ffprobe", "-v", "error", "-select_streams", "a", "-show_entries",
+                        "stream=index", "-of", "csv=p=0", video], capture_output=True, text=True)
+    return bool(r.stdout.strip())
+
+
+def finish_one(ep_dir, lang, video, suffix, readalong=True):
     ep = Path(ep_dir)
     name = ep.name
     script = yaml.safe_load((ep / "script.yaml").read_text(encoding="utf-8"))
@@ -34,7 +49,7 @@ def main(ep_dir, lang, video):
     durations = json.loads(dur_file.read_text()) if dur_file.exists() else {}
     final = Path("out/final")
     final.mkdir(parents=True, exist_ok=True)
-    target = final / f"{name}_{lang}.mp4"
+    target = final / f"{name}_{lang}{suffix}.mp4"
     times = seg_times(script, durations)
 
     if lang == "hi" and durations:
@@ -52,10 +67,19 @@ def main(ep_dir, lang, video):
             i = int((start + 0.3) * rate)
             track[i:i + len(audio)] += audio[: len(track) - i]
         sf.write("out/hi_voice.wav", track, rate)
-        subprocess.run(["ffmpeg", "-y", "-i", video, "-i", "out/hi_voice.wav", "-c:v", "copy",
-                        "-c:a", "aac", "-b:a", "192k", "-shortest", str(target)], check=True)
+        if has_audio(video):   # keep the cartoon sound effects under the voice
+            subprocess.run(["ffmpeg", "-y", "-i", video, "-i", "out/hi_voice.wav", "-filter_complex",
+                            "[0:a]volume=0.6[a0];[a0][1:a]amix=inputs=2:duration=first:normalize=0[a]",
+                            "-map", "0:v", "-map", "[a]", "-c:v", "copy", "-c:a", "aac", "-b:a", "192k",
+                            str(target)], check=True)
+        else:
+            subprocess.run(["ffmpeg", "-y", "-i", video, "-i", "out/hi_voice.wav", "-c:v", "copy",
+                            "-c:a", "aac", "-b:a", "192k", "-shortest", str(target)], check=True)
     else:
         subprocess.run(["ffmpeg", "-y", "-i", video, "-c", "copy", str(target)], check=True)
+        if not readalong:
+            print("wrote", target)
+            return
         lines = [f"{script.get('title', name)} - read-along ({lang})", ""]
         for seg, start, total in times:
             m, s = divmod(int(start), 60)

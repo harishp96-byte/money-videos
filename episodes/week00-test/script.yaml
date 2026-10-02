@@ -4,12 +4,15 @@
 # three videos keep identical timing.
 
 title: "Where does your salary go?"
+ep: 0                   # episode number for the Short title ("EP 0: ...")
 captions: true          # show the spoken line at the bottom of the screen
 
 segments:
   - id: s1
     visual: title
     seconds: 6
+    calendar: ["1", "20"]   # wall calendar flips from the 1st to the 20th
+    mood: sad               # close-up reaction: happy | think | wow | sad
     heading:
       en: "Where does your salary go?"
       hi: "आपकी सैलरी कहाँ जाती है?"

@@ -14,9 +14,25 @@ videos. The Hindi one comes back already voiced.
 
 To re-run by hand: Actions → Render episode → **Run workflow**.
 
-## Shorts and Reels (9:16), made automatically
-Every render also makes a vertical Short per language: artifacts
-`<week>-en-short`, `<week>-hi-short`, `<week>-ta-short`. Each has the MP4 and
+## House style (cartoon, like the reference Short)
+`pipeline/cartoon.py` makes every video look like the kids' cartoon Short we
+picked as the reference: the boy from `assets/characters/boy_v1_sheet.png`
+in drawn rooms, quick cuts every 1-2 s (title cards, wide shots, close-up
+reactions), moving props (cash, calendar, coin jars, piggy bank, chalkboard),
+mouth flaps while he talks, short all-caps captions and light sound effects.
+Each render gives two files per language:
+- `<week>_<lang>.mp4`: 16:9 long video, captions at the bottom
+- `<week>_<lang>_short.mp4`: 9:16 Short/Reel, with a black frame, a yellow
+  "EP n: title" line, the cartoon panel in the middle and the caption under it
+
+Script extras: `ep:` (episode number), `calendar: ["1", "20"]` and
+`mood: sad|wow|think|happy` on a title scene. Poses are cut from the sheet
+by `python pipeline/cut_sprites.py` (run again if the sheet changes).
+
+## Older Shorts maker (not run by default)
+`pipeline/make_short.py` is the earlier picture-slideshow Short. The render
+no longer runs it (the cartoon renderer makes the Short now), but it still
+works by hand and supports your own voice recording with Whisper timing. Each has the MP4 and
 an `.srt` caption file (upload it in YouTube Studio → Subtitles).
 Layout: title band on top, the scene picture slowly zooming or panning,
 the spoken line as a popping caption, disclaimer at the bottom.
@@ -54,7 +70,9 @@ Without the token everything still renders; the Hindi video is just silent.
 | --- | --- |
 | `episodes/*/script.yaml` | One episode: scenes, on-screen text and lines in 3 languages |
 | `pipeline/tts_hindi.py` | Hindi voice. Change `VOICE` to change the tone |
-| `pipeline/scene.py` | The animation engine (Manim) |
+| `pipeline/cartoon.py` | The cartoon engine: 16:9 video + 9:16 Short |
+| `pipeline/cut_sprites.py` | Cuts the boy's poses out of the character sheet |
+| `pipeline/scene.py` | Old slide-style engine (Manim), no longer used |
 | `pipeline/finish.py` | Adds Hindi voice; writes read-along files |
 | `pipeline/make_short.py` | Vertical Short/Reel with captions |
 | `pipeline/borrowed_mpt.py` | Helpers adapted from MoneyPrinterTurbo (MIT) |
