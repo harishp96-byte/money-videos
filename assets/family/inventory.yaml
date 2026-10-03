@@ -1,0 +1,125 @@
+# Family asset inventory: everything we need from Gemini, once, for all future episodes.
+# An item counts as DONE when its file exists. Run:
+#   python pipeline/inventory.py status          what is done / missing
+#   python pipeline/inventory.py next 5          Gemini prompts for the next 5 missing items
+#   python pipeline/inventory.py add <id> <file> save a finished image/clip under the right name
+# Outfits (fixed): Aarav white T-shirt + blue shorts; Dad olive shirt + dark trousers;
+# Mom mustard kurta + dark leggings; Dadaji cream kurta + white pyjama + round glasses.
+
+style: "Pixar-style 3D animation, same character style as the attached family sheet, warm natural light, correct hands with five fingers"
+negative: "no text, no labels, no logos, no watermark, no extra people, no distorted hands, no change of face or outfit"
+
+master:
+  family_sheet: "Approved family reference sheet (all four, front view). Crop the Gemini sparkle off."
+
+characters:
+  aarav:
+    who: "Aarav, the boy on the far left of the attached sheet"
+    extra_poses:
+      hold_piggy: "holding a small piggy bank with both hands, smiling"
+      count_fingers: "counting on his fingers, thinking"
+      school_bag: "wearing a small plain school bag on both shoulders, standing"
+      sleeping: "asleep in bed, tucked under a plain blanket, side view"
+  dad:
+    who: "Dad, the tall man in the olive shirt, second from the left"
+    extra_poses:
+      explain: "explaining with both hands open, kind face"
+      hold_phone: "holding a smartphone in one hand, looking at it"
+      grocery_bag: "carrying a plain cloth grocery bag in one hand"
+      notebook: "holding a plain notebook and pen, writing a budget"
+  mom:
+    who: "Mom, the woman in the mustard kurta with a braid, third from the left"
+    extra_poses:
+      cooking: "stirring a steel pot, smiling"
+      hand_coins: "holding out her hand with a few coins, offering"
+      hold_phone: "holding a smartphone, checking it with a smile"
+      notebook: "writing in a plain notebook at a table"
+  dadaji:
+    who: "Dadaji, the grandfather in the cream kurta with glasses, on the far right"
+    extra_poses:
+      newspaper: "sitting and reading a newspaper (no readable text)"
+      storytelling: "storytelling with one hand raised, animated"
+      blessing: "hand raised in blessing, gentle smile"
+      walking_stick: "walking with a wooden walking stick"
+
+common_poses:
+  stand_front: "standing relaxed, facing camera, arms by sides"
+  stand_3q: "standing, three-quarter view, gentle smile"
+  walk: "mid-stride walking, side view"
+  run: "running, side view, arms swinging, hair moving"
+  jump: "jumping with joy, both feet off the ground"
+  sit_chair: "sitting on a plain wooden chair, relaxed"
+  sit_floor: "sitting cross-legged on the floor"
+  crouch: "crouching down, knees bent, friendly"
+  point: "pointing forward with one finger, explaining"
+  wave: "waving hello with one hand"
+  hands_hips: "hands on hips, confident"
+  hands_out: "both hands held out in front, palms up, ready to hold an object"
+
+expressions: [happy, laughing, sad, surprised, curious, thinking, proud, shy, worried, excited, sleepy, "stern but kind"]
+
+groups:   # two or more characters together (still images)
+  dad_boy_crouch: "Dad crouches to Aarav's level, hand on his shoulder, both smiling"
+  dad_boy_highfive: "Dad and Aarav high-five"
+  mom_boy_hug: "Mom hugs Aarav"
+  dadaji_boy_story: "Dadaji sits with Aarav beside him, telling a story"
+  family_dinner: "all four at a dining table, sharing a meal, laughing"
+  family_walk: "all four walking together, Aarav holding Dad's hand"
+  family_sofa: "all four sitting on a sofa, relaxed"
+  family_festival: "all four in front of Diwali diyas, smiling"
+
+places:   # 9:16 stills, no people
+  living_room: "living room with sofa and a dining corner"
+  kitchen: "kitchen with steel utensils"
+  dining_table: "dining table close view"
+  bedroom: "boy's bedroom with a small study desk"
+  entrance: "front door and entrance with a shoe rack"
+  park: "neighbourhood park with a swing and a bench"
+  kirana_shop: "small kirana shop counter, no readable signs"
+  school_gate: "school gate with a tree, no signs"
+  bank_counter: "bank counter, no signs"
+  diwali_home: "home decorated for Diwali with diyas"
+
+props:    # single objects on a plain background
+  jars: "three plain glass jars with red, green and blue lids"
+  piggy_bank: "a classic pink piggy bank"
+  coins_pile: "a pile of gold coins"
+  money_notes: "a neat stack of money notes, no readable numbers or text"
+  phone_upi: "a smartphone showing a simple green tick, no text"
+  shopping_bag: "a plain cloth shopping bag"
+  school_bag: "a small plain school bag"
+  notebook_pen: "a plain notebook with a pen"
+  calculator: "a plain calculator, no readable digits"
+  wall_clock: "a round wall clock and a plain wall calendar, no readable numbers"
+
+clips:    # 8 s silent Veo clips, 9:16. Attach family sheet + one place still.
+  B01_smile: "Aarav smiles warmly at the camera"
+  B02_sad: "Aarav looks down sadly, shoulders drop"
+  B03_wow: "Aarav, eyes wide, surprised 'wow'"
+  B04_curious: "Aarav tilts his head curiously"
+  B05_nod: "Aarav nods 'yes' happily"
+  B06_proud: "Aarav stands proud, chest out"
+  B07_think: "Aarav thinks, finger on chin"
+  B08_jump: "Aarav makes a small excited jump"
+  D01_explain: "Dad explains gently with hand gestures at a table"
+  D02_crouch: "Dad crouches to Aarav's level and smiles"
+  D03_approve: "Dad nods approvingly"
+  D04_one_rule: "Dad kindly raises one finger"
+  D05_laugh: "Dad laughs warmly"
+  D06_reassure: "Dad rests his hands on Aarav's shoulders, reassuring"
+  M01_cook: "Mom cooks in the kitchen and smiles at Aarav"
+  M02_coins: "Mom hands Aarav a few coins"
+  M03_hug: "Mom hugs Aarav"
+  G01_paper: "Dadaji sits on the sofa with a newspaper and smiles"
+  G02_story: "Dadaji tells a story with hand gestures"
+  G03_bless: "Dadaji pats Aarav's head in blessing"
+  T01_highfive: "Dad and Aarav high-five"
+  T02_walk_in: "Aarav walks in through the front door"
+  T03_count: "Aarav counts coins at the table, Dad beside him"
+  T04_park: "Dad and Aarav walk hand in hand in the park"
+  T05_dinner: "the family laughs at the dinner table"
+  T06_shake_piggy: "Aarav shakes a piggy bank"
+  P01_jars: "Aarav drops coins into three jars with red, green and blue lids"
+  P02_piggy_fill: "the piggy bank slowly fills with coins"
+  P03_shop_pay: "Aarav pays coins at a shop counter"
+  P04_time_passes: "a wall clock and calendar pages flip, time passes"
