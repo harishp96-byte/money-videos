@@ -1,0 +1,73 @@
+# Puppet show episode: Dad teaches Aarav the three jars (spend / save / share).
+# Rendered by pipeline/puppet_show.py, voiced by pipeline/tts_show.py (Kokoro).
+# Each beat = one spoken line. Beats that share a shot name in a row are one
+# continuous shot (for example the three "jars" beats: the coins stay put).
+
+title: "Three Jars"
+ep: 1
+amount: 100            # one fixed amount per episode
+
+voices:
+  dad:   {voice: am_michael, speed: 0.95, pitch: 0.97}
+  aarav: {voice: af_heart,   speed: 1.05, pitch: 1.2}
+
+beats:
+  - id: b1
+    shot: wide_run_in
+    who: aarav
+    say: "Papa, Papa! I got a hundred rupees!"
+
+  - id: b2
+    shot: close
+    who: dad
+    face: ex_happy
+    say: "Wow, well done! Come, let's play the three jars game."
+
+  - id: b3
+    shot: jars
+    who: dad
+    jar: 0
+    coins: 5
+    say: "This jar is for spending. Fifty rupees for fun."
+
+  - id: b4
+    shot: jars
+    who: dad
+    jar: 1
+    coins: 3
+    say: "This one is for saving. Thirty rupees for your big dream."
+
+  - id: b5
+    shot: jars
+    who: dad
+    jar: 2
+    coins: 2
+    say: "And this one is for sharing. Twenty rupees to help someone."
+
+  - id: b6
+    shot: close
+    who: aarav
+    face: ex_curious
+    say: "But Papa, why three jars?"
+
+  - id: b7
+    shot: wide_teach
+    who: dad
+    say: "Spending is fun. Saving makes dreams come true. And sharing makes people smile."
+
+  - id: b8
+    shot: close
+    who: aarav
+    face: ex_happy
+    say: "Now I get it!"
+
+  - id: b9
+    shot: wide_end
+    who: dad
+    say: "Spend a little, save a lot, and share with love!"
+    card: ["SPEND 50", "SAVE 30", "SHARE 20"]
+
+jars:
+  - {label: SPEND, color: [255, 140, 50]}
+  - {label: SAVE,  color: [70, 185, 95]}
+  - {label: SHARE, color: [80, 140, 235]}

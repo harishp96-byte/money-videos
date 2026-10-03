@@ -49,7 +49,10 @@ def main():
     char = sys.argv[1]
     base = os.path.join(ROOT, "assets", "family", char)
     layout = json.load(open(os.path.join(base, "sheet_layout.json")))
-    sheet = np.array(Image.open(os.path.join(base, "sheet.jpg")).convert("RGB"))
+    sp = os.path.join(base, "sheet.jpg")
+    if not os.path.exists(sp):
+        sp = os.path.join(base, "sheet.png")
+    sheet = np.array(Image.open(sp).convert("RGB"))
     out = os.path.join(base, "cut")
     os.makedirs(out, exist_ok=True)
     for name, (l, t, r, b) in layout["cells"].items():
