@@ -29,20 +29,29 @@ def items():
     for key, c in INV["characters"].items():
         who = c["who"]
         keep = "exact same face, hair, outfit and look as the attached family sheet"
-        out.append(dict(id=f"{key}.turnaround", cat="sheets", file=f"{key}/turnaround.jpg", prompt={
+        out.append(dict(id=f"{key}.sheet", cat="sheets", file=f"{key}/sheet.jpg", prompt={
+            "task": "complete character reference sheet, one image", "character": who,
+            "keep": keep + ", identical in every cell",
+            "render": "3D rendered CGI character, Pixar-style, soft skin shading, realistic hair, NOT 2D, NOT a flat illustration, no outlines",
+            "layout": {"top": "full-body turnaround: front, three-quarter left, side left, back (and three-quarter right if it fits), neutral standing pose",
+                       "right_top": "head-and-shoulder expressions: " + ", ".join(INV["expressions"]),
+                       "bottom": "full-body action poses in one row: walking, running, jumping, sitting on a chair, sitting cross-legged, crouching, pointing, waving"},
+            "background": "plain soft beige, even lighting, same scale and lighting in every cell",
+            "aspect_ratio": "16:9", "negative": NEG + ", no 2D drawing"}, optional=False))
+        out.append(dict(id=f"{key}.turnaround", cat="extras", optional=True, file=f"{key}/turnaround.jpg", prompt={
             "task": "character turnaround sheet, one image", "character": who, "keep": keep,
             "layout": "top row: full-body views in a line, front, three-quarter left, side left, back, three-quarter right. "
                       "Bottom row: head-only views, front, three-quarter, side, back of head. Same scale in every view, "
                       "neutral standing pose, arms slightly away from the body so hands are visible",
             "background": PLAIN, "aspect_ratio": "16:9", "style": STYLE, "negative": NEG}))
-        out.append(dict(id=f"{key}.expressions", cat="sheets", file=f"{key}/expressions.jpg", prompt={
+        out.append(dict(id=f"{key}.expressions", cat="extras", optional=True, file=f"{key}/expressions.jpg", prompt={
             "task": "expression sheet, one image", "character": who, "keep": keep,
             "layout": "grid of 12 head-and-shoulder expressions: " + ", ".join(INV["expressions"]),
             "background": PLAIN, "aspect_ratio": "16:9", "style": STYLE, "negative": NEG}))
         poses = dict(INV["common_poses"])
         poses.update(c.get("extra_poses", {}))
         for pid, desc in poses.items():
-            out.append(dict(id=f"{key}.pose.{pid}", cat="poses", file=f"{key}/pose_{pid}.jpg", prompt={
+            out.append(dict(id=f"{key}.pose.{pid}", cat="poses", optional=True, file=f"{key}/pose_{pid}.jpg", prompt={
                 "task": "single full-body pose image", "character": who, "keep": keep, "pose": desc,
                 "background": PLAIN, "aspect_ratio": "9:16", "style": STYLE, "negative": NEG}))
     for gid, desc in INV["groups"].items():
@@ -67,6 +76,7 @@ def items():
             "format": "vertical 9:16, 8 seconds", "audio": "soft ambient sound only, no speech, no music",
             "negative": "no speech, no dialogue, no subtitles, no text, no logos, no signboards, no watermark, no extra people, no distorted hands"}))
     for it in out:
+        it.setdefault("optional", False)
         it["done"] = os.path.exists(os.path.join(FAM, it["file"]))
     return out
 
@@ -85,14 +95,15 @@ def cmd_status(its):
         sub = [i for i in its if i["cat"] == c]
         d = sum(i["done"] for i in sub)
         print(f"{c:8s} [{bar(d, len(sub))}] {d}/{len(sub)}")
-    d = sum(i["done"] for i in its)
-    print(f"{'TOTAL':8s} [{bar(d, len(its))}] {d}/{len(its)}")
+    req = [i for i in its if not i["optional"]]
+    d = sum(i["done"] for i in req)
+    print(f"{'REQUIRED':8s} [{bar(d, len(req))}] {d}/{len(req)}   (extras and poses are optional)")
 
 
 def cmd_next(its, argv):
     n = int(argv[0]) if argv and argv[0].isdigit() else 5
     cat = argv[argv.index("--cat") + 1] if "--cat" in argv else None
-    todo = [i for i in its if not i["done"] and (not cat or i["cat"] == cat) and i["prompt"]]
+    todo = [i for i in its if not i["done"] and (not cat or i["cat"] == cat) and i["prompt"] and (cat or not i["optional"])]
     for i in todo[:n]:
         print(f"### {i['id']}  ->  assets/family/{i['file']}")
         print(json.dumps(i["prompt"], indent=2, ensure_ascii=False))
