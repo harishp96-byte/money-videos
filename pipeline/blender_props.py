@@ -194,7 +194,36 @@ def make_jar(scene, name, x, tint):
     bpy.ops.rigidbody.object_add(type="PASSIVE")
     jar.rigid_body.collision_shape = "MESH"
     jar.rigid_body.friction = 0.6
+    # glass would cast a solid black shadow in Cycles; use a soft blob instead
+    jar.visible_shadow = False
+    add_blob_shadow(scene, name + "_shadow", x)
     return jar
+
+
+def add_blob_shadow(scene, name, x, strength=0.5):
+    """Soft round contact shadow under a jar (the floor only catches shadows)."""
+    bpy.ops.mesh.primitive_plane_add(size=2)
+    pl = bpy.context.active_object
+    pl.name = name
+    pl.location = (x + 0.03, 0.03, 0.003)
+    pl.scale = (0.5, 0.5, 1)
+    m = bpy.data.materials.new(name)
+    m.use_nodes = True
+    nt = m.node_tree
+    b = nt.nodes["Principled BSDF"]
+    set_input(b, ["Base Color"], (0.05, 0.03, 0.02, 1.0))
+    set_input(b, ["Roughness"], 1.0)
+    tc = nt.nodes.new("ShaderNodeTexCoord")
+    gr = nt.nodes.new("ShaderNodeTexGradient")
+    gr.gradient_type = "SPHERICAL"
+    mul = nt.nodes.new("ShaderNodeMath")
+    mul.operation = "MULTIPLY"
+    mul.inputs[1].default_value = strength
+    nt.links.new(tc.outputs["Object"], gr.inputs["Vector"])
+    nt.links.new(gr.outputs["Fac"], mul.inputs[0])
+    nt.links.new(mul.outputs["Value"], b.inputs["Alpha"])
+    pl.data.materials.append(m)
+    pl.visible_shadow = False
 
 
 def build_jars(args, scene):
