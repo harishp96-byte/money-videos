@@ -110,3 +110,16 @@ Without the token everything still renders; the Hindi video is just silent.
 
 Keep this repo **public** so GitHub Actions minutes stay free and unlimited.
 All content is for education only, not investment advice.
+
+## 3D prop shots with headless Blender (only where needed)
+Character acting comes from the Gemini clips. For a few shots that need real
+3D objects (coins dropping into jars, piles of money) GitHub can run Blender
+with no computer on your side:
+1. Actions -> **Blender prop shot** -> **Run workflow** (tick *quick look* first
+   for a single fast still, then run again for the full video).
+2. Result: `<shot>_alpha.webm` (transparent, lay it over footage),
+   `<shot>_preview.mp4` and a still. They are downloadable as an artifact and
+   also on the `previews-props` branch.
+3. Script: `pipeline/blender_props.py`. Shot `jars` takes `counts` (coins in
+   the spend / save / share jars, e.g. `5 3 2` for 50/30/20). Add new shots in
+   the same file. CPU rendering is slow, so shots stay short (about 8 s).

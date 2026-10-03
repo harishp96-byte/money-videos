@@ -1,0 +1,79 @@
+# Renders a 3D prop shot (coins into jars ...) with headless Blender, free.
+# Only runs when you ask: Actions -> "Blender prop shot" -> Run workflow.
+# Output: a transparent .webm (to lay over footage), a preview .mp4 and one
+# still, saved on the "previews-props" branch and as a download.
+name: Blender prop shot
+
+on:
+  workflow_dispatch:
+    inputs:
+      shot:
+        description: "Shot name (jars)"
+        required: true
+        default: "jars"
+      counts:
+        description: "Coins in spend / save / share jars"
+        required: true
+        default: "5 3 2"
+      seconds:
+        description: "Length in seconds"
+        required: true
+        default: "8"
+      quick_look:
+        description: "Render one still only (fast check)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  blender:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Blender and ffmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y blender ffmpeg
+          blender --version | head -1
+      - name: Render with Blender
+        run: |
+          STILL=""
+          if [ "${{ inputs.quick_look }}" = "true" ]; then STILL="--still 90"; fi
+          blender -b -noaudio -P pipeline/blender_props.py -- \
+            --shot "${{ inputs.shot }}" --out out/frames \
+            --counts ${{ inputs.counts }} --seconds ${{ inputs.seconds }} $STILL
+          ls out/frames | head
+      - name: Make the videos
+        if: ${{ !inputs.quick_look }}
+        run: |
+          mkdir -p out/props
+          N="${{ inputs.shot }}"
+          # transparent video to lay over footage
+          ffmpeg -y -framerate 24 -i out/frames/f_%04d.png \
+            -c:v libvpx-vp9 -pix_fmt yuva420p -b:v 0 -crf 28 out/props/${N}_alpha.webm
+          # preview on a warm backdrop
+          ffmpeg -y -f lavfi -i color=c=0xF3E3C3:s=720x1280:r=24 \
+            -framerate 24 -i out/frames/f_%04d.png \
+            -filter_complex "[0][1]overlay=shortest=1,format=yuv420p" \
+            out/props/${N}_preview.mp4
+          cp out/frames/f_0090.png out/props/${N}_still.png || true
+      - name: Keep the quick-look still
+        if: ${{ inputs.quick_look }}
+        run: mkdir -p out/props && cp out/frames/still.png out/props/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: prop-${{ inputs.shot }}
+          path: out/props/
+          retention-days: 14
+      # So Claude can open and check the result.
+      - name: Save preview copy
+        run: |
+          mkdir -p /tmp/p && cp out/props/* /tmp/p/
+          cd /tmp/p
+          git init -q -b previews-props
+          git config user.name "render-bot"; git config user.email "render-bot@users.noreply.github.com"
+          git add . && git commit -q -m "Prop shot: ${{ inputs.shot }} (${GITHUB_SHA::7})"
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" previews-props
