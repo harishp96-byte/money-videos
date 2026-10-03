@@ -37,7 +37,7 @@ def parse_args():
     p.add_argument("--fps", type=int, default=24)
     p.add_argument("--res", type=int, nargs=2, default=[720, 1280])
     p.add_argument("--counts", type=int, nargs=3, default=[5, 3, 2])
-    p.add_argument("--samples", type=int, default=24)
+    p.add_argument("--samples", type=int, default=96)
     p.add_argument("--seed", type=int, default=7)
     p.add_argument("--still", type=int, default=0,
                    help="render only this one frame (quick look)")
@@ -89,7 +89,11 @@ def setup_scene(args):
     scene.render.engine = "CYCLES"
     scene.cycles.device = "CPU"
     scene.cycles.samples = args.samples
-    scene.cycles.use_denoising = True
+    # the apt build of Blender has no denoiser, so use more samples instead
+    scene.cycles.use_denoising = False
+    scene.cycles.use_adaptive_sampling = True
+    scene.cycles.adaptive_threshold = 0.02
+    scene.cycles.sample_clamp_indirect = 3.0
     scene.cycles.transparent_max_bounces = 8
     scene.cycles.max_bounces = 6
     scene.render.film_transparent = True
