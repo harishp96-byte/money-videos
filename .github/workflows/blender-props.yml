@@ -5,6 +5,9 @@
 name: Blender prop shot
 
 on:
+  # Editing the Blender script or this file makes a quick still (cheap check).
+  push:
+    paths: ["pipeline/blender_props.py", ".github/workflows/blender-props.yml"]
   workflow_dispatch:
     inputs:
       shot:
@@ -27,6 +30,12 @@ on:
 permissions:
   contents: write
 
+env:
+  SHOT: ${{ inputs.shot || 'jars' }}
+  COUNTS: ${{ inputs.counts || '5 3 2' }}
+  SECONDS_LEN: ${{ inputs.seconds || '8' }}
+  QUICK: ${{ github.event_name == 'push' || inputs.quick_look }}
+
 jobs:
   blender:
     runs-on: ubuntu-24.04
@@ -41,16 +50,16 @@ jobs:
       - name: Render with Blender
         run: |
           STILL=""
-          if [ "${{ inputs.quick_look }}" = "true" ]; then STILL="--still 90"; fi
+          if [ "$QUICK" = "true" ]; then STILL="--still 90"; fi
           blender -b -noaudio -P pipeline/blender_props.py -- \
-            --shot "${{ inputs.shot }}" --out out/frames \
-            --counts ${{ inputs.counts }} --seconds ${{ inputs.seconds }} $STILL
+            --shot "$SHOT" --out out/frames \
+            --counts $COUNTS --seconds $SECONDS_LEN $STILL
           ls out/frames | head
       - name: Make the videos
-        if: ${{ !inputs.quick_look }}
+        if: ${{ env.QUICK != 'true' }}
         run: |
           mkdir -p out/props
-          N="${{ inputs.shot }}"
+          N="$SHOT"
           # transparent video to lay over footage
           ffmpeg -y -framerate 24 -i out/frames/f_%04d.png \
             -c:v libvpx-vp9 -pix_fmt yuva420p -b:v 0 -crf 28 out/props/${N}_alpha.webm
@@ -61,11 +70,11 @@ jobs:
             out/props/${N}_preview.mp4
           cp out/frames/f_0090.png out/props/${N}_still.png || true
       - name: Keep the quick-look still
-        if: ${{ inputs.quick_look }}
+        if: ${{ env.QUICK == 'true' }}
         run: mkdir -p out/props && cp out/frames/still.png out/props/
       - uses: actions/upload-artifact@v4
         with:
-          name: prop-${{ inputs.shot }}
+          name: prop-${{ env.SHOT }}
           path: out/props/
           retention-days: 14
       # So Claude can open and check the result.
@@ -75,5 +84,5 @@ jobs:
           cd /tmp/p
           git init -q -b previews-props
           git config user.name "render-bot"; git config user.email "render-bot@users.noreply.github.com"
-          git add . && git commit -q -m "Prop shot: ${{ inputs.shot }} (${GITHUB_SHA::7})"
+          git add . && git commit -q -m "Prop shot: $SHOT (${GITHUB_SHA::7})"
           git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" previews-props
