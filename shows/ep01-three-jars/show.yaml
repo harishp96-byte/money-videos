@@ -8,8 +8,8 @@ ep: 1
 amount: 100            # one fixed amount per episode
 
 voices:
-  dad:   {voice: am_michael, speed: 0.95, pitch: 0.97}
-  aarav: {voice: af_heart,   speed: 1.05, pitch: 1.2}
+  dad:   {voice: am_michael, speed: 1.08, pitch: 0.97}
+  aarav: {voice: af_heart,   speed: 1.08, pitch: 1.2}
 
 beats:
   - id: b1

@@ -20,7 +20,7 @@ from kokoro import KPipeline
 
 RATE = 24000
 FPS = 30
-GAP = 0.12
+GAP = 0.22
 
 
 def main(show_dir):
@@ -37,6 +37,12 @@ def main(show_dir):
         chunks, words, t0 = [], [], 0.0
         for r in pipe(text, voice=cfg["voice"], speed=float(cfg["speed"]), split_pattern=r"(?<=[.!?])\s+"):
             audio = r.audio.detach().cpu().numpy() if hasattr(r.audio, "detach") else np.asarray(r.audio)
+            # trim the model's own silence at both ends, so lines keep a brisk cartoon pace
+            loud = np.where(np.abs(audio) > 0.02 * (np.abs(audio).max() + 1e-9))[0]
+            a0 = max(0, int(loud[0]) - int(0.03 * RATE)) if len(loud) else 0
+            a1 = min(len(audio), int(loud[-1]) + int(0.06 * RATE)) if len(loud) else len(audio)
+            audio = audio[a0:a1]
+            t0 -= a0 / RATE
             for tok in (r.tokens or []):
                 if not tok.text.strip():
                     continue
@@ -45,9 +51,9 @@ def main(show_dir):
                     continue
                 if tok.start_ts is None or tok.end_ts is None:
                     continue
-                words.append([round(t0 + tok.start_ts, 3), round(t0 + tok.end_ts, 3), tok.text])
+                words.append([round(max(0.0, t0 + tok.start_ts), 3), round(max(0.0, t0 + tok.end_ts), 3), tok.text])
             chunks += [audio, np.zeros(int(GAP * RATE), dtype=np.float32)]
-            t0 += len(audio) / RATE + GAP
+            t0 += a0 / RATE + len(audio) / RATE + GAP
         raw = out / f"{beat['id']}_raw.wav"
         wav = out / f"{beat['id']}.wav"
         sf.write(raw, np.concatenate(chunks), RATE)

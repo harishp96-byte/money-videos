@@ -958,7 +958,7 @@ class Show:
         ph, pw = self.pill.shape[:2]
         blit(canvas, self.pill, affine((pw / 2, 0), (W / 2, 60)))
         rng = np.random.default_rng(int(t * FPS))
-        canvas += rng.normal(0, 0.012, (H // 2, W // 2, 1)).astype(np.float32).repeat(2, 0).repeat(2, 1)
+        canvas += rng.normal(0, 0.008, (H // 2, W // 2, 1)).astype(np.float32).repeat(2, 0).repeat(2, 1)
         return np.clip(canvas, 0, 1)
 
     def shot_wide(self, t, u, d, kind, punch):
@@ -1351,7 +1351,7 @@ def main():
     silent = "out/show/_video.mp4"
     p = subprocess.Popen(["ffmpeg", "-y", "-loglevel", "error", "-f", "rawvideo", "-pix_fmt", "rgb24",
                           "-s", f"{W}x{H}", "-r", str(FPS), "-i", "-", "-c:v", "libx264", "-preset", "medium",
-                          "-pix_fmt", "yuv420p", "-crf", "19", silent], stdin=subprocess.PIPE)
+                          "-pix_fmt", "yuv420p", "-crf", "21", silent], stdin=subprocess.PIPE)
     jobs = int(os.environ.get("RENDER_JOBS", os.cpu_count() or 1))
     with Pool(jobs) as pool:
         for k, buf in enumerate(pool.imap(_render, frames, chunksize=6)):
