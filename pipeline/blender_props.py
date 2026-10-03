@@ -184,7 +184,7 @@ def make_jar(scene, name, x, tint, glass=False):
     bm.to_mesh(me)
     bm.free()
     jar = link(scene, bpy.data.objects.new(name, me))
-    jar.location = (x, 0, JAR_H / 2)
+    jar.location = (x, 0, JAR_H / 2 + 0.035)   # wall thickness extrudes outward, so lift
     smooth(jar)
     mod = jar.modifiers.new("wall", "SOLIDIFY")
     mod.thickness = 0.035

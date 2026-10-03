@@ -6,7 +6,8 @@
 name: Blender prop shot
 
 on:
-  # Editing the Blender script or this file makes a quick still (cheap check).
+  # Editing the Blender script or this file makes a quick still (cheap check);
+  # put [full] in the commit message to render the whole video instead.
   push:
     paths: ["pipeline/blender_props.py", ".github/workflows/blender-props.yml"]
   workflow_dispatch:
@@ -35,7 +36,8 @@ env:
   SHOT: ${{ inputs.shot || 'jars' }}
   COUNTS: ${{ inputs.counts || '5 3 2' }}
   SECONDS_LEN: ${{ inputs.seconds || '8' }}
-  QUICK: ${{ github.event_name == 'push' || inputs.quick_look }}
+  # a push makes only a quick still, unless the commit message says [full]
+  QUICK: ${{ (github.event_name == 'push' && !contains(github.event.head_commit.message, '[full]')) || inputs.quick_look == true }}
   BLENDER_URL: https://download.blender.org/release/Blender4.2/blender-4.2.3-linux-x64.tar.xz
 
 jobs:
