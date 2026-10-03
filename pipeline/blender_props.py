@@ -134,7 +134,7 @@ def setup_scene(args):
     return scene
 
 
-def add_camera(scene, target=(0, 0, 0.45), start=(0, -3.2, 1.25), end=(0, -2.9, 1.15)):
+def add_camera(scene, target=(0, 0, 0.3), start=(0, -3.0, 2.3), end=(0, -2.7, 2.1)):
     cam_data = bpy.data.cameras.new("cam")
     cam_data.lens = 24
     cam = link(scene, bpy.data.objects.new("cam", cam_data))
@@ -167,7 +167,7 @@ def add_floor(scene):
 
 # ---------- shot: jars ----------------------------------------------------
 
-JAR_R, JAR_H = 0.30, 0.72
+JAR_R, JAR_H = 0.32, 0.55
 COIN_R, COIN_T = 0.075, 0.016
 
 
@@ -190,7 +190,7 @@ def make_jar(scene, name, x, tint):
     activate(jar)
     bpy.ops.object.modifier_apply(modifier="wall")
     jar.data.materials.append(make_material(name + "_glass", tint, rough=0.04,
-                                            transmission=0.92))
+                                            transmission=1.0))
     bpy.ops.rigidbody.object_add(type="PASSIVE")
     jar.rigid_body.collision_shape = "MESH"
     jar.rigid_body.friction = 0.6
@@ -200,7 +200,8 @@ def make_jar(scene, name, x, tint):
 def build_jars(args, scene):
     rnd = random.Random(args.seed)
     xs = (-0.82, 0.0, 0.82)   # spend, save, share
-    tints = ((1.0, 0.25, 0.22), (0.25, 0.85, 0.35), (0.25, 0.5, 1.0))
+    # light tints so the gold coins stay visible through the glass
+    tints = ((1.0, 0.62, 0.58), (0.62, 0.95, 0.68), (0.62, 0.78, 1.0))
     names = ("spend", "save", "share")
     for n, x, t in zip(names, xs, tints):
         make_jar(scene, "jar_" + n, x, t)

@@ -81,7 +81,7 @@ jobs:
           SIZE=$(( (TOTAL + 7) / 8 ))
           FIRST=$(( ${{ matrix.chunk }} * SIZE + 1 ))
           LAST=$(( FIRST + SIZE - 1 )); if [ $LAST -gt $TOTAL ]; then LAST=$TOTAL; fi
-          if [ "$QUICK" = "true" ]; then RANGE="--still 90"; else RANGE="--first $FIRST --last $LAST"; fi
+          if [ "$QUICK" = "true" ]; then RANGE="--still 140"; else RANGE="--first $FIRST --last $LAST"; fi
           ~/blender/blender -b -noaudio -P pipeline/blender_props.py -- \
             --shot "$SHOT" --out out/frames \
             --counts $COUNTS --seconds $SECONDS_LEN $RANGE 2>&1 | tee out/props/blender.log
@@ -132,7 +132,7 @@ jobs:
               -framerate 24 -i out/frames/f_%04d.png \
               -filter_complex "[0][1]overlay=shortest=1,format=yuv420p" \
               out/props/${N}_preview.mp4
-            cp out/frames/f_0090.png out/props/${N}_still.png || true
+            cp out/frames/f_0140.png out/props/${N}_still.png || true
           fi
       - uses: actions/upload-artifact@v4
         with:
