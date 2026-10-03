@@ -56,7 +56,7 @@ def set_input(node, names, value):
             return
 
 
-def make_material(name, color, metallic=0.0, rough=0.5, transmission=0.0):
+def make_material(name, color, metallic=0.0, rough=0.5, transmission=0.0, ior=1.45):
     m = bpy.data.materials.new(name)
     m.use_nodes = True
     b = m.node_tree.nodes["Principled BSDF"]
@@ -64,7 +64,7 @@ def make_material(name, color, metallic=0.0, rough=0.5, transmission=0.0):
     set_input(b, ["Metallic"], metallic)
     set_input(b, ["Roughness"], rough)
     set_input(b, ["Transmission Weight", "Transmission"], transmission)
-    set_input(b, ["IOR"], 1.45)
+    set_input(b, ["IOR"], ior)
     return m
 
 
@@ -134,7 +134,7 @@ def setup_scene(args):
     return scene
 
 
-def add_camera(scene, target=(0, 0, 0.3), start=(0, -3.0, 2.3), end=(0, -2.7, 2.1)):
+def add_camera(scene, target=(0, 0, 0.2), start=(0, -2.9, 2.9), end=(0, -2.6, 2.7)):
     cam_data = bpy.data.cameras.new("cam")
     cam_data.lens = 24
     cam = link(scene, bpy.data.objects.new("cam", cam_data))
@@ -167,8 +167,8 @@ def add_floor(scene):
 
 # ---------- shot: jars ----------------------------------------------------
 
-JAR_R, JAR_H = 0.32, 0.55
-COIN_R, COIN_T = 0.075, 0.016
+JAR_R, JAR_H = 0.32, 0.45
+COIN_R, COIN_T = 0.085, 0.018
 
 
 def make_jar(scene, name, x, tint):
@@ -190,7 +190,7 @@ def make_jar(scene, name, x, tint):
     activate(jar)
     bpy.ops.object.modifier_apply(modifier="wall")
     jar.data.materials.append(make_material(name + "_glass", tint, rough=0.04,
-                                            transmission=1.0))
+                                            transmission=1.0, ior=1.06))
     bpy.ops.rigidbody.object_add(type="PASSIVE")
     jar.rigid_body.collision_shape = "MESH"
     jar.rigid_body.friction = 0.6
