@@ -2,6 +2,9 @@
 # Rendered by pipeline/puppet_show.py, voiced by pipeline/tts_show.py (Kokoro).
 # Each beat = one spoken line. Beats that share a shot name in a row are one
 # continuous shot (for example the three "jars" beats: the coins stay put).
+#
+# Shot types: wide_run_in, close, jars, stage, wide_end. A "stage" beat lists its
+# cast (pose, position, expression, action); see shows/README.md for the words.
 
 title: "Three Jars"
 ep: 1
@@ -20,7 +23,7 @@ beats:
   - id: b2
     shot: close
     who: dad
-    face: ex_happy
+    expression: happy
     say: "Wow, well done! Come, let's play the three jars game."
 
   - id: b3
@@ -47,18 +50,24 @@ beats:
   - id: b6
     shot: close
     who: aarav
-    face: ex_curious
+    expression: curious
     say: "But Papa, why three jars?"
 
   - id: b7
-    shot: wide_teach
+    shot: stage            # data-driven shot: who stands where, in which pose, doing what
     who: dad
     say: "Spending is fun. Saving makes dreams come true. And sharing makes people smile."
+    cast:
+      aarav: {pose: standing, position: left, expression: curious, action: listen}
+      dad:
+        position: right
+        expression: happy
+        pose: [standing, point@0.15, wave@2.6, standing@4.6]   # pose@seconds into the line
 
   - id: b8
     shot: close
     who: aarav
-    face: ex_happy
+    expression: happy
     say: "Now I get it!"
 
   - id: b9

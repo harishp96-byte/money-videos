@@ -64,6 +64,22 @@ FACES = {
     ("aarav", "ex_curious"): {"eyes": [(38.5, 73), (77, 72)], "erx": 8.0, "ery": 6.5, "mouth": (62, 97), "mw": 23},
 }
 
+# ---- show.yaml vocabulary for "stage" shots (see shows/README.md) --------
+# friendly pose names -> cut sprite names (a raw sprite name like "pose_point" also works)
+POSES = {"standing": "turn_3q", "front": "turn_front", "side": "turn_side", "back": "turn_back",
+         "point": "pose_point", "wave": "pose_wave", "crouch": "pose_crouch", "sit": "pose_sit_chair",
+         "sit_floor": "pose_sit_floor", "walk": "pose_walk", "run": "pose_run", "jump": "pose_jump"}
+# where a character stands (world x); a number also works
+POSITIONS = {"left": 250, "center": 450, "right": 640, "off_left": -170, "off_right": 1070}
+# body acting for an expression in full-body shots (faces are too small to swap there):
+# head tilt (deg), head drop (px), lean (deg), bounce (0..1)
+MOODS = {"happy": (2, -2, 0, 0.6), "excited": (3, -4, 2, 1.0), "laugh": (-4, -3, -3, 0.8),
+         "curious": (9, 0, 3, 0.0), "thinking": (-7, 2, -2, 0.0), "surprised": (0, -8, -4, 0.2),
+         "sad": (-3, 12, -4, 0.0), "worried": (4, 6, -2, 0.0), "stern": (0, 2, -3, 0.0),
+         "calm": (0, 0, 0, 0.0), "shy": (-6, 6, -2, 0.0), "sleepy": (-8, 8, -3, 0.0)}
+ACTIONS = ("idle", "talk", "listen", "enter", "exit", "jump")
+
+
 # ------------------------------------------------------------------ maths
 
 
@@ -682,6 +698,17 @@ class Timeline:
             if b["shot"] == "jars":
                 pre = max(pre, 0.3)
                 post = max(post, 0.45 + 0.36 * max(0, b.get("coins", 0) - 1) + 1.1 - pre - v["dur"])
+            if "expression" in b and "face" not in b:
+                b = dict(b, face="ex_" + b["expression"])
+            if b["shot"] == "close" and "face" not in b:
+                raise ValueError(f"beat {b['id']}: a close shot needs 'expression' (or 'face')")
+            if b["shot"] == "stage":
+                for who, spec in (b.get("cast") or {}).items():
+                    if who not in CHARS:
+                        raise ValueError(f"beat {b['id']}: unknown character '{who}' (have {list(CHARS)})")
+                    act = spec.get("action", "idle")
+                    if act not in ACTIONS:
+                        raise ValueError(f"beat {b['id']}: unknown action '{act}' (use {ACTIONS})")
             beat = dict(b, t0=t, speak=t + pre, dur_voice=v["dur"], t1=t + pre + v["dur"] + post,
                         words=v["words"], env=v["env"])
             self.beats.append(beat)
@@ -689,7 +716,8 @@ class Timeline:
         self.total = t
         self.shots = []
         for b in self.beats:
-            if self.shots and self.shots[-1]["shot"] == b["shot"] and b["shot"] == "jars":
+            if (self.shots and self.shots[-1]["shot"] == b["shot"] and b["shot"] in ("jars", "stage")
+                    and not b.get("cut")):
                 self.shots[-1]["beats"].append(b)
                 self.shots[-1]["t1"] = b["t1"]
             else:
@@ -927,6 +955,8 @@ class Show:
             wdt = px2.shape[1]
             k = 1.0 - 0.5 * clamp(lift / 220)
             ellipse_shadow(canvas, X, Y + 4 * z, wdt * 0.32 * z * k, 13 * z * k, 0.55 * k, 7 * z)
+            # tight dark contact core right under the feet, so they sit ON the floor
+            ellipse_shadow(canvas, X, Y + 2 * z, wdt * 0.2 * z * k, 5 * z * k, 0.4 * k * k, 2.5 * z)
             # long soft cast shadow away from the window (to the right, onto the floor)
             m = np.array([[z * sx, 0.95 * z, 0], [0, 0.2 * z, 0]], np.float32)
             m[:, 2] = np.array([X, Y + lift * z * 0.1], np.float32) - m[:, :2] @ np.array([anchor[0], hgt], np.float32)
@@ -945,6 +975,8 @@ class Show:
             canvas = self.shot_jars(t, u, d, punch)
         elif kind == "close":
             canvas = self.shot_close(t, u, d, shot["beats"][0], punch)
+        elif kind == "stage":
+            canvas = self.shot_stage(t, u, d, punch)
         else:
             canvas = self.shot_wide(t, u, d, kind, punch)
         canvas *= self.vignette
@@ -1060,6 +1092,106 @@ class Show:
         self.draw_char(canvas, cam, "dad", pose, 640, FEET_Y + 6, -1, sx=(1 + 0.5 * s) * (1 - 0.003 * br),
                        sy=(1 - s) * (1 + 0.008 * br), hrot=-2.5 * noise1(t, 7) - 3 * talk, hdy=nod,
                        hdx=-3 * noise1(t * 0.6, 3), lean=lean - 6 * talk + 3 * noise1(t * 0.4, 9))
+
+    # ---- data-driven "stage" shot: who stands where, in which pose, doing what --------
+    def shot_stage(self, t, u, d, punch):
+        beat = self.tl.beat_at(t)
+        push = 1.14 + 0.05 * ease_in_out(u / d)
+        z = push * punch
+        cam = (z, CAM0[0], CAM0[1] + 95 + 60 * (push - 1.14))
+        canvas = room_view(self.rooms, cam, 1)
+        clock_hands(canvas, cam, t)
+        props = beat.get("props", ["jars_full"])
+        if "jars" in props or "jars_full" in props:
+            self.draw_mini_jars(canvas, cam, full=("jars_full" in props))
+        cast = beat.get("cast") or {}
+        xs = {who: self._stage_x(spec) for who, spec in cast.items()}
+        for who, spec in cast.items():
+            self.stage_actor(canvas, cam, t, beat, who, spec, xs)
+        return canvas
+
+    @staticmethod
+    def _stage_x(spec):
+        p = spec.get("position", "center")
+        return float(POSITIONS.get(p, p)) if not isinstance(p, (int, float)) else float(p)
+
+    @staticmethod
+    def _pose_track(spec):
+        """'point' or ['standing', 'point@0.2', 'wave@2.6'] -> [(time after the line starts, sprite)]."""
+        raw = spec.get("pose", "standing")
+        items = raw if isinstance(raw, list) else [raw]
+        track = []
+        for it in items:
+            name, _, at = str(it).partition("@")
+            track.append((float(at) if at else -1e9, POSES.get(name.strip(), name.strip())))
+        return sorted(track)
+
+    def stage_actor(self, canvas, cam, t, beat, who, spec, xs):
+        v = t - beat["speak"]                       # seconds since this line started
+        u = t - beat["t0"]                          # seconds since this beat started
+        track = self._pose_track(spec)
+        pose = track[0][1]
+        switches = []
+        for at, name in track:
+            if v >= at:
+                pose = name
+            if at > -1e8:
+                switches.append(at)
+        x = xs[who]
+        # look at the other character (or the camera side) unless told otherwise
+        others = [ox for o, ox in xs.items() if o != who]
+        face_dir = {"left": -1, "right": 1}.get(spec.get("face"), 0) or (
+            (1 if others[0] > x else -1) if others else (1 if x < 450 else -1))
+        talk = self.tl.loud(t, who)
+        tilt, drop, lean0, bounce = MOODS.get(spec.get("expression", "calm"), MOODS["calm"])
+        act = spec.get("action", "idle")
+        walk_t = 1.1
+        # entering / exiting: walk in from (or out to) the nearest side of the frame
+        if act in ("enter", "exit"):
+            edge = POSITIONS["off_left"] if x < 450 else POSITIONS["off_right"]
+            if act == "enter" and u < walk_t:
+                k = ease_out(u / walk_t)
+                self._walk(canvas, cam, who, edge + (x - edge) * k, 1 if x > edge else -1, u)
+                return
+            if act == "exit":
+                t_out = beat["t1"] - beat["t0"] - walk_t
+                if u > t_out:
+                    k = ease_in_out((u - t_out) / walk_t)
+                    self._walk(canvas, cam, who, x + (edge - x) * k, 1 if edge > x else -1, u)
+                    return
+            if act == "enter":
+                switches = switches + [walk_t - (beat["speak"] - beat["t0"])]
+        if act == "jump" and v > 0:
+            ph = (v % 0.9) / 0.9
+            if ph < 0.15:
+                k = smooth(ph / 0.15)
+                self.draw_char(canvas, cam, who, pose, x, FEET_Y, face_dir, sx=1 + 0.07 * k, sy=1 - 0.09 * k)
+            elif ph < 0.75:
+                k = (ph - 0.15) / 0.6
+                self.draw_char(canvas, cam, who, POSES["jump"], x, FEET_Y, face_dir, lift=4 * k * (1 - k) * 130,
+                               sx=0.96, sy=1.05, rot=-4 * (k - 0.5) * face_dir)
+            else:
+                s = spring(ph - 0.75, 0.12, 2.4, 6.5)
+                self.draw_char(canvas, cam, who, pose, x, FEET_Y, face_dir, sx=1 + s * 0.8, sy=1 - s)
+            return
+        since = min([v - s for s in switches if v >= s] or [9])
+        pop = spring(since, 0.07, 2.2, 7)              # squash-and-overshoot when the pose changes
+        seed = sum(map(ord, who))
+        br = math.sin(2 * math.pi * 0.4 * t + seed)
+        hop = bounce * 0.012 * max(0, math.sin(2 * math.pi * 1.6 * t + seed)) ** 2
+        nod = 6 * talk * (0.6 + 0.4 * math.sin(2 * math.pi * 2.1 * t))
+        if act == "listen":
+            nod += 5 * max(0, math.sin(2 * math.pi * 0.7 * t)) ** 4
+        self.draw_char(canvas, cam, who, pose, x, FEET_Y + (6 if who == "dad" else 0), face_dir,
+                       sx=(1 + 0.5 * pop) * (1 - 0.004 * br), sy=(1 - pop) * (1 + 0.009 * br + hop),
+                       hrot=(tilt - 3 * talk) * face_dir + 2.5 * noise1(t, seed),
+                       hdy=drop + nod, hdx=2.5 * noise1(t * 0.6, seed + 3),
+                       lean=(lean0 - 5 * talk) * face_dir + 3 * noise1(t * 0.4, seed + 9))
+
+    def _walk(self, canvas, cam, who, x, dirn, u):
+        step = abs(math.sin(2 * math.pi * 1.9 * u))
+        self.draw_char(canvas, cam, who, POSES["walk"], x, FEET_Y, dirn, lift=step * 7,
+                       sx=1 - 0.015 * step, sy=1 + 0.02 * step, rot=1.5 * math.sin(2 * math.pi * 1.9 * u))
 
     def sfx_once(self, t, u, times, kind):
         pass                                                              # collected up front (see collect_sfx)
@@ -1268,6 +1400,17 @@ def collect_sfx(show):
             ev += [(v0 + 0.25 * i, "pop") for i in range(3)] + [(v0 + 0.8, "ding")]
         if s["shot"] == "close":
             ev.append((s["t0"] + 0.02, "pop"))
+        if s["shot"] == "stage":
+            for b in s["beats"]:
+                for who, spec in (b.get("cast") or {}).items():
+                    act = spec.get("action", "idle")
+                    if act == "enter":
+                        ev += [(b["t0"] + k * 0.263, "step") for k in range(1, 5)]
+                    elif act == "exit":
+                        ev += [(b["t1"] - 1.1 + k * 0.263, "step") for k in range(1, 5)]
+                    elif act == "jump":
+                        n = int(b["dur_voice"] / 0.9)
+                        ev += [(b["speak"] + 0.9 * k + 0.68, "boing") for k in range(n)]
     return ev
 
 
