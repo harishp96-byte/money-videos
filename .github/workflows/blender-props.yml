@@ -51,9 +51,11 @@ jobs:
         run: |
           STILL=""
           if [ "$QUICK" = "true" ]; then STILL="--still 90"; fi
+          mkdir -p out/props
+          set -o pipefail
           blender -b -noaudio -P pipeline/blender_props.py -- \
             --shot "$SHOT" --out out/frames \
-            --counts $COUNTS --seconds $SECONDS_LEN $STILL
+            --counts $COUNTS --seconds $SECONDS_LEN $STILL 2>&1 | tee out/props/blender.log
           ls out/frames | head
       - name: Make the videos
         if: ${{ env.QUICK != 'true' }}
@@ -85,4 +87,14 @@ jobs:
           git init -q -b previews-props
           git config user.name "render-bot"; git config user.email "render-bot@users.noreply.github.com"
           git add . && git commit -q -m "Prop shot: $SHOT (${GITHUB_SHA::7})"
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" previews-props
+      # If anything failed, keep the log where Claude can read it.
+      - name: Save error log
+        if: ${{ failure() }}
+        run: |
+          mkdir -p /tmp/l && tail -n 200 out/props/blender.log > /tmp/l/blender_error.log || echo "no log" > /tmp/l/blender_error.log
+          cd /tmp/l
+          git init -q -b previews-props
+          git config user.name "render-bot"; git config user.email "render-bot@users.noreply.github.com"
+          git add . && git commit -q -m "Blender error log (${GITHUB_SHA::7})"
           git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" previews-props
