@@ -1,0 +1,12 @@
+{
+  "note": "Cell boxes (left, top, right, bottom) in assets/family/aarav/sheet.jpg. Written by hand for this sheet; each new Gemini sheet needs its own layout.",
+  "cells": {
+    "turn_front": [2, 2, 214, 444], "turn_3q": [218, 2, 411, 444], "turn_side": [415, 2, 594, 444], "turn_back": [598, 2, 834, 444],
+    "ex_happy": [838, 2, 1014, 159], "ex_laugh": [1018, 2, 1195, 159], "ex_sad": [1199, 2, 1374, 159],
+    "ex_surprised": [838, 165, 1014, 311], "ex_curious": [1018, 165, 1195, 311], "ex_thinking": [1199, 165, 1374, 311],
+    "ex_excited": [838, 317, 1014, 448], "ex_sleepy": [1018, 317, 1195, 448], "ex_stern": [1199, 317, 1374, 448],
+    "pose_walk": [2, 454, 192, 766], "pose_run": [199, 454, 371, 766], "pose_jump": [378, 454, 534, 766],
+    "pose_sit_chair": [541, 454, 696, 766], "pose_sit_floor": [703, 454, 855, 766], "pose_crouch": [862, 454, 1013, 766],
+    "pose_point": [1020, 454, 1193, 766], "pose_wave": [1200, 454, 1374, 766]
+  }
+}

@@ -123,3 +123,12 @@ with no computer on your side:
 3. Script: `pipeline/blender_props.py`. Shot `jars` takes `counts` (coins in
    the spend / save / share jars, e.g. `5 3 2` for 50/30/20). Add new shots in
    the same file. CPU rendering is slow, so shots stay short (about 8 s).
+
+## Puppet animation from the 3D character sheets (free, CPU)
+`python pipeline/cut_family.py aarav` cuts a character sheet into transparent
+sprites (`assets/family/<char>/cut/`, layout in `sheet_layout.json`).
+`python pipeline/puppet.py aarav demo out/puppet_demo.mp4` renders a 10 s test:
+eased walk-in, optical-flow pose morphs, squash and stretch, a parabola jump with
+a shrinking shadow, a face close-up with pop, and a caption bubble. It is limited
+by sprite size (sheet cells are only about 100x260 px); individual full-size poses
+from the inventory will look much sharper. See `assets/family/README.md`.
