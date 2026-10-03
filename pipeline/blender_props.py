@@ -37,7 +37,10 @@ def parse_args():
     p.add_argument("--fps", type=int, default=24)
     p.add_argument("--res", type=int, nargs=2, default=[720, 1280])
     p.add_argument("--counts", type=int, nargs=3, default=[5, 3, 2])
-    p.add_argument("--samples", type=int, default=96)
+    p.add_argument("--samples", type=int, default=32)
+    p.add_argument("--denoise", type=int, default=1)
+    p.add_argument("--first", type=int, default=0, help="render from this frame")
+    p.add_argument("--last", type=int, default=0, help="render up to this frame")
     p.add_argument("--seed", type=int, default=7)
     p.add_argument("--still", type=int, default=0,
                    help="render only this one frame (quick look)")
@@ -89,13 +92,16 @@ def setup_scene(args):
     scene.render.engine = "CYCLES"
     scene.cycles.device = "CPU"
     scene.cycles.samples = args.samples
-    # the apt build of Blender has no denoiser, so use more samples instead
-    scene.cycles.use_denoising = False
+    # needs the official Blender build (the apt one has no denoiser: --denoise 0)
+    scene.cycles.use_denoising = bool(args.denoise)
+    if args.denoise:
+        scene.cycles.denoiser = "OPENIMAGEDENOISE"
     scene.cycles.use_adaptive_sampling = True
-    scene.cycles.adaptive_threshold = 0.02
+    scene.cycles.adaptive_threshold = 0.03
     scene.cycles.sample_clamp_indirect = 3.0
-    scene.cycles.transparent_max_bounces = 8
-    scene.cycles.max_bounces = 6
+    scene.cycles.glossy_bounces = 3
+    scene.cycles.transparent_max_bounces = 6
+    scene.cycles.max_bounces = 5
     scene.render.film_transparent = True
     scene.render.resolution_x, scene.render.resolution_y = args.res
     scene.render.resolution_percentage = 100
@@ -223,8 +229,10 @@ def build_jars(args, scene):
 
     for i, j in enumerate(queue):
         coin = link(scene, bpy.data.objects.new("coin%02d" % i, coin_mesh))
-        coin.location = (xs[j] + rnd.uniform(-0.1, 0.1),
-                         rnd.uniform(-0.1, 0.1), 1.55)
+        # every held coin gets its own height so none overlap (an overlap
+        # flings the coin out of the jar the moment it is released)
+        coin.location = (xs[j] + rnd.uniform(-0.08, 0.08),
+                         rnd.uniform(-0.08, 0.08), 1.2 + 0.07 * i)
         coin.rotation_euler = (rnd.uniform(-0.5, 0.5), rnd.uniform(-0.5, 0.5),
                                rnd.uniform(0, math.pi))
         smooth(coin)
@@ -276,6 +284,10 @@ def main():
         scene.render.filepath = os.path.join(args.out, "still.png")
         bpy.ops.render.render(write_still=True)
     else:
+        if args.first:
+            scene.frame_start = args.first
+        if args.last:
+            scene.frame_end = args.last
         scene.frame_set(scene.frame_start)
         scene.render.filepath = os.path.join(args.out, "f_")
         bpy.ops.render.render(animation=True)

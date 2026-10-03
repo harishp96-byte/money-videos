@@ -1,7 +1,8 @@
 # Renders a 3D prop shot (coins into jars ...) with headless Blender, free.
 # Only runs when you ask: Actions -> "Blender prop shot" -> Run workflow.
-# Output: a transparent .webm (to lay over footage), a preview .mp4 and one
-# still, saved on the "previews-props" branch and as a download.
+# The frames are split over 8 parallel jobs (CPU rendering is slow), then
+# joined. Output: a transparent .webm (to lay over footage), a preview .mp4
+# and a still, saved on the "previews-props" branch and as a download.
 name: Blender prop shot
 
 on:
@@ -35,45 +36,102 @@ env:
   COUNTS: ${{ inputs.counts || '5 3 2' }}
   SECONDS_LEN: ${{ inputs.seconds || '8' }}
   QUICK: ${{ github.event_name == 'push' || inputs.quick_look }}
+  BLENDER_URL: https://download.blender.org/release/Blender4.2/blender-4.2.3-linux-x64.tar.xz
 
 jobs:
-  blender:
+  plan:
     runs-on: ubuntu-24.04
-    timeout-minutes: 90
+    outputs:
+      chunks: ${{ steps.p.outputs.chunks }}
+    steps:
+      - id: p
+        run: |
+          if [ "$QUICK" = "true" ]; then echo 'chunks=[0]' >> "$GITHUB_OUTPUT"
+          else echo 'chunks=[0,1,2,3,4,5,6,7]' >> "$GITHUB_OUTPUT"; fi
+
+  render:
+    needs: plan
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        chunk: ${{ fromJSON(needs.plan.outputs.chunks) }}
     steps:
       - uses: actions/checkout@v4
-      - name: Install Blender and ffmpeg
+      - name: Cache Blender
+        uses: actions/cache@v4
+        with:
+          path: ~/blender
+          key: blender-4.2.3
+      - name: Install Blender (official build, has the denoiser)
         run: |
           sudo apt-get update
-          sudo apt-get install -y blender ffmpeg
-          blender --version | head -1
+          sudo apt-get install -y libxi6 libxkbcommon0 libsm6 libxxf86vm1 libxfixes3 libgl1 libxrender1 libegl1
+          if [ ! -x ~/blender/blender ]; then
+            mkdir -p ~/blender
+            curl -sSL "$BLENDER_URL" | tar -xJ -C ~/blender --strip-components=1
+          fi
+          ~/blender/blender --version | head -1
       - name: Render with Blender
         run: |
-          STILL=""
-          if [ "$QUICK" = "true" ]; then STILL="--still 90"; fi
           mkdir -p out/props
           set -o pipefail
-          blender -b -noaudio -P pipeline/blender_props.py -- \
+          TOTAL=$(( SECONDS_LEN * 24 ))
+          SIZE=$(( (TOTAL + 7) / 8 ))
+          FIRST=$(( ${{ matrix.chunk }} * SIZE + 1 ))
+          LAST=$(( FIRST + SIZE - 1 )); if [ $LAST -gt $TOTAL ]; then LAST=$TOTAL; fi
+          if [ "$QUICK" = "true" ]; then RANGE="--still 90"; else RANGE="--first $FIRST --last $LAST"; fi
+          ~/blender/blender -b -noaudio -P pipeline/blender_props.py -- \
             --shot "$SHOT" --out out/frames \
-            --counts $COUNTS --seconds $SECONDS_LEN $STILL 2>&1 | tee out/props/blender.log
-          ls out/frames | head
+            --counts $COUNTS --seconds $SECONDS_LEN $RANGE 2>&1 | tee out/props/blender.log
+          ls out/frames | head -3
+      - uses: actions/upload-artifact@v4
+        with:
+          name: frames-${{ matrix.chunk }}
+          path: out/frames/
+          retention-days: 2
+      # If anything failed, keep the log where Claude can read it.
+      - name: Save error log
+        if: ${{ failure() && matrix.chunk == 0 }}
+        run: |
+          mkdir -p /tmp/l && tail -n 200 out/props/blender.log > /tmp/l/blender_error.log || echo "no log" > /tmp/l/blender_error.log
+          cd /tmp/l
+          git init -q -b previews-props
+          git config user.name "render-bot"; git config user.email "render-bot@users.noreply.github.com"
+          git add . && git commit -q -m "Blender error log (${GITHUB_SHA::7})"
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" previews-props
+
+  assemble:
+    needs: render
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: frames-*
+          path: out/frames
+          merge-multiple: true
+      - name: Install ffmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
       - name: Make the videos
-        if: ${{ env.QUICK != 'true' }}
         run: |
           mkdir -p out/props
           N="$SHOT"
-          # transparent video to lay over footage
-          ffmpeg -y -framerate 24 -i out/frames/f_%04d.png \
-            -c:v libvpx-vp9 -pix_fmt yuva420p -b:v 0 -crf 28 out/props/${N}_alpha.webm
-          # preview on a warm backdrop
-          ffmpeg -y -f lavfi -i color=c=0xF3E3C3:s=720x1280:r=24 \
-            -framerate 24 -i out/frames/f_%04d.png \
-            -filter_complex "[0][1]overlay=shortest=1,format=yuv420p" \
-            out/props/${N}_preview.mp4
-          cp out/frames/f_0090.png out/props/${N}_still.png || true
-      - name: Keep the quick-look still
-        if: ${{ env.QUICK == 'true' }}
-        run: mkdir -p out/props && cp out/frames/still.png out/props/
+          if [ "$QUICK" = "true" ]; then
+            cp out/frames/still.png out/props/${N}_still.png
+          else
+            ls out/frames | wc -l
+            # transparent video to lay over footage
+            ffmpeg -y -framerate 24 -i out/frames/f_%04d.png \
+              -c:v libvpx-vp9 -pix_fmt yuva420p -b:v 0 -crf 28 out/props/${N}_alpha.webm
+            # preview on a warm backdrop
+            ffmpeg -y -f lavfi -i color=c=0xF3E3C3:s=720x1280:r=24 \
+              -framerate 24 -i out/frames/f_%04d.png \
+              -filter_complex "[0][1]overlay=shortest=1,format=yuv420p" \
+              out/props/${N}_preview.mp4
+            cp out/frames/f_0090.png out/props/${N}_still.png || true
+          fi
       - uses: actions/upload-artifact@v4
         with:
           name: prop-${{ env.SHOT }}
@@ -87,14 +145,4 @@ jobs:
           git init -q -b previews-props
           git config user.name "render-bot"; git config user.email "render-bot@users.noreply.github.com"
           git add . && git commit -q -m "Prop shot: $SHOT (${GITHUB_SHA::7})"
-          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" previews-props
-      # If anything failed, keep the log where Claude can read it.
-      - name: Save error log
-        if: ${{ failure() }}
-        run: |
-          mkdir -p /tmp/l && tail -n 200 out/props/blender.log > /tmp/l/blender_error.log || echo "no log" > /tmp/l/blender_error.log
-          cd /tmp/l
-          git init -q -b previews-props
-          git config user.name "render-bot"; git config user.email "render-bot@users.noreply.github.com"
-          git add . && git commit -q -m "Blender error log (${GITHUB_SHA::7})"
           git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" previews-props
