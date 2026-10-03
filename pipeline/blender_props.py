@@ -38,6 +38,8 @@ def parse_args():
     p.add_argument("--res", type=int, nargs=2, default=[720, 1280])
     p.add_argument("--counts", type=int, nargs=3, default=[5, 3, 2])
     p.add_argument("--samples", type=int, default=32)
+    p.add_argument("--glass", type=int, default=0,
+                   help="1 = clear glass jars (slow, artefacts); 0 = coloured plastic")
     p.add_argument("--denoise", type=int, default=1)
     p.add_argument("--first", type=int, default=0, help="render from this frame")
     p.add_argument("--last", type=int, default=0, help="render up to this frame")
@@ -171,7 +173,7 @@ JAR_R, JAR_H = 0.32, 0.45
 COIN_R, COIN_T = 0.085, 0.018
 
 
-def make_jar(scene, name, x, tint):
+def make_jar(scene, name, x, tint, glass=False):
     bm = bmesh.new()
     bmesh.ops.create_cone(bm, cap_ends=True, cap_tris=False, segments=40,
                           radius1=JAR_R, radius2=JAR_R, depth=JAR_H)
@@ -189,14 +191,18 @@ def make_jar(scene, name, x, tint):
     mod.offset = 1.0
     activate(jar)
     bpy.ops.object.modifier_apply(modifier="wall")
-    jar.data.materials.append(make_material(name + "_glass", tint, rough=0.04,
-                                            transmission=1.0, ior=1.06))
+    if glass:
+        jar.data.materials.append(make_material(name + "_glass", tint, rough=0.04,
+                                                transmission=1.0, ior=1.06))
+    else:
+        jar.data.materials.append(make_material(name + "_plastic", tint, rough=0.32))
     bpy.ops.rigidbody.object_add(type="PASSIVE")
     jar.rigid_body.collision_shape = "MESH"
     jar.rigid_body.friction = 0.6
-    # glass would cast a solid black shadow in Cycles; use a soft blob instead
-    jar.visible_shadow = False
-    add_blob_shadow(scene, name + "_shadow", x)
+    if glass:
+        # glass casts a solid black shadow in Cycles; use a soft blob instead
+        jar.visible_shadow = False
+        add_blob_shadow(scene, name + "_shadow", x)
     return jar
 
 
@@ -229,11 +235,13 @@ def add_blob_shadow(scene, name, x, strength=0.5):
 def build_jars(args, scene):
     rnd = random.Random(args.seed)
     xs = (-0.82, 0.0, 0.82)   # spend, save, share
-    # light tints so the gold coins stay visible through the glass
-    tints = ((1.0, 0.62, 0.58), (0.62, 0.95, 0.68), (0.62, 0.78, 1.0))
+    if args.glass:   # light tints so the gold coins stay visible through glass
+        tints = ((1.0, 0.62, 0.58), (0.62, 0.95, 0.68), (0.62, 0.78, 1.0))
+    else:
+        tints = ((0.85, 0.1, 0.08), (0.1, 0.6, 0.2), (0.1, 0.3, 0.9))
     names = ("spend", "save", "share")
     for n, x, t in zip(names, xs, tints):
-        make_jar(scene, "jar_" + n, x, t)
+        make_jar(scene, "jar_" + n, x, t, bool(args.glass))
 
     # one gold coin mesh, shared by every coin
     bm = bmesh.new()
