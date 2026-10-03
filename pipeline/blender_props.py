@@ -279,6 +279,13 @@ def main():
         scene.frame_set(f)
 
     os.makedirs(args.out, exist_ok=True)
+    probe = args.still or scene.frame_start
+    scene.frame_set(probe)
+    dg = bpy.context.evaluated_depsgraph_get()
+    for ob in [o for o in scene.objects if o.name.startswith("coin")][:4]:
+        ev = ob.evaluated_get(dg)
+        print("PROBE frame", probe, ob.name, "hide_render", ob.hide_render,
+              "pos", tuple(round(v, 2) for v in ev.matrix_world.translation))
     if args.still:
         scene.frame_set(args.still)
         scene.render.filepath = os.path.join(args.out, "still.png")

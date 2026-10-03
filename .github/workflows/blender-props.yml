@@ -85,6 +85,7 @@ jobs:
           ~/blender/blender -b -noaudio -P pipeline/blender_props.py -- \
             --shot "$SHOT" --out out/frames \
             --counts $COUNTS --seconds $SECONDS_LEN $RANGE 2>&1 | tee out/props/blender.log
+          cp out/props/blender.log out/frames/log_${{ matrix.chunk }}.txt
           ls out/frames | head -3
       - uses: actions/upload-artifact@v4
         with:
@@ -118,6 +119,7 @@ jobs:
         run: |
           mkdir -p out/props
           N="$SHOT"
+          grep -h PROBE out/frames/log_*.txt | head -8 > out/props/probe.txt || true
           if [ "$QUICK" = "true" ]; then
             cp out/frames/still.png out/props/${N}_still.png
           else
