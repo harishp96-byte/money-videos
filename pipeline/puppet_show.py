@@ -745,7 +745,7 @@ class Captions:
             ws = b["words"]
             cur = []
             for i, (a, e, w) in enumerate(ws):
-                cur.append((b["speak"] + a, b["speak"] + e, w))
+                cur.append((b["speak"] + a, min(b["speak"] + e, b["t1"] - 0.62), w))
                 if len(cur) == 3 or w[-1] in ".!?," or i == len(ws) - 1:
                     self.chunks.append(cur)
                     cur = []
