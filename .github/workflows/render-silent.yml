@@ -1,0 +1,69 @@
+# Renders an episode as a SILENT cartoon (no voice, no sound effects), for free.
+# Use it to check the look before the voiced render. Run it by hand:
+# Actions -> "Render episode (silent)" -> Run workflow.
+# Needs no voice model, so it is quick. Output: a download plus the
+# "previews-silent" branch so Claude can open the videos.
+name: Render episode (silent)
+
+on:
+  workflow_dispatch:
+    inputs:
+      episode:
+        description: "Episode folder (leave blank for the newest)"
+        required: false
+        default: ""
+      lang:
+        description: "Text language on screen (en, hi or ta)"
+        required: false
+        default: "en"
+
+permissions:
+  contents: write
+
+jobs:
+  render:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - name: Pick the episode
+        id: p
+        run: |
+          EP="${{ github.event.inputs.episode }}"
+          if [ -z "$EP" ]; then EP=$(ls episodes | sort | tail -1); fi
+          echo "Episode: $EP"
+          echo "ep=$EP" >> "$GITHUB_OUTPUT"
+      - name: Install cartoon tools and fonts
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg fonts-noto-core libraqm0
+          pip install pillow pyyaml soundfile numpy scipy
+      - name: Render cartoon (16:9 video + 9:16 Short)
+        env:
+          LANG_CODE: ${{ github.event.inputs.lang || 'en' }}
+        run: python pipeline/cartoon.py "episodes/${{ steps.p.outputs.ep }}" "$LANG_CODE"
+      - name: Strip all audio
+        env:
+          LANG_CODE: ${{ github.event.inputs.lang || 'en' }}
+        run: |
+          mkdir -p out/silent
+          for f in out/media/cartoon/${LANG_CODE}.mp4 out/media/cartoon/${LANG_CODE}_short.mp4; do
+            [ -f "$f" ] && ffmpeg -y -loglevel error -i "$f" -c:v copy -an \
+              "out/silent/${{ steps.p.outputs.ep }}_$(basename "${f%.mp4}")_silent.mp4"
+          done
+          ls -la out/silent
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.p.outputs.ep }}-silent
+          path: out/silent/
+          retention-days: 14
+      - name: Save preview copy
+        run: |
+          mkdir -p /tmp/p && cp out/silent/*.mp4 /tmp/p/
+          cd /tmp/p
+          git init -q -b previews-silent
+          git config user.name "render-bot"; git config user.email "render-bot@users.noreply.github.com"
+          git add . && git commit -q -m "Silent preview: ${{ steps.p.outputs.ep }} (${GITHUB_SHA::7})"
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" previews-silent

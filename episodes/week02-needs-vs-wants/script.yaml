@@ -1,0 +1,72 @@
+# EP 2: Needs vs Wants (Diwali sale). Fixed amount: Rs 100 = 60 needs + 30 wants + 10 saved.
+# Visual is rendered with the existing scene types: title, bullets, number, split, outro.
+title: "Needs vs Wants"
+ep: 2
+captions: true
+voice_en: {voice: af_heart, speed: 1.0, pitch: 1.12}
+
+segments:
+  - id: s1
+    visual: title
+    seconds: 6
+    mood: wow
+    heading:
+      en: "Needs vs Wants"
+      hi: "ज़रूरत या चाहत?"
+      ta: "தேவை vs ஆசை"
+    say:
+      en: "Diwali sale! Everything is shiny... but you only have 100 rupees."
+      hi: "दिवाली सेल! सब कुछ कितना चमकीला है... पर तुम्हारे पास सिर्फ़ सौ रुपये हैं।"
+      ta: "தீபாவளி சேல்! எல்லாமே பளபளன்னு இருக்கு... ஆனா உன்கிட்ட நூறு ரூபாய் மட்டும்தான்."
+
+  - id: s2
+    visual: bullets
+    seconds: 9
+    icons: [bag, bag, bag]
+    items:
+      en: ["Notebook Rs 40 (need)", "Pencils Rs 20 (need)", "Stickers Rs 30 (want)"]
+      hi: ["कॉपी ₹40 (ज़रूरत)", "पेंसिल ₹20 (ज़रूरत)", "स्टिकर ₹30 (चाहत)"]
+      ta: ["நோட்டு ₹40 (தேவை)", "பென்சில் ₹20 (தேவை)", "ஸ்டிக்கர் ₹30 (ஆசை)"]
+    say:
+      en: "Beta, sort what you pick. A notebook for 40 and pencils for 20 are needs. A sticker pack for 30 is a want."
+      hi: "बेटा, जो चुनो उसे छाँटो। कॉपी चालीस और पेंसिल बीस ज़रूरत हैं। स्टिकर पैक तीस की चाहत है।"
+      ta: "கண்ணா, எடுக்கறதை பிரிச்சுப் பாரு. நோட்டு நாற்பது, பென்சில் இருபது தேவை. ஸ்டிக்கர் பேக் முப்பது ஆசை."
+
+  - id: s3
+    visual: number
+    seconds: 7
+    value: "₹60"
+    total: "₹100"
+    caption:
+      en: "Needs cost Rs 60. Rs 40 left for wants."
+      hi: "ज़रूरत के ₹60। चाहत के लिए ₹40 बचे।"
+      ta: "தேவைக்கு ₹60. ஆசைக்கு ₹40 மிச்சம்."
+    say:
+      en: "Needs cost 60. From 100 rupees, 40 are left for wants."
+      hi: "ज़रूरत के साठ रुपये लगे। सौ में से चालीस बचे चाहत के लिए।"
+      ta: "தேவைக்கு அறுபது ரூபாய் ஆச்சு. நூறில் நாற்பது ரூபாய் ஆசைக்கு மிச்சம்."
+
+  - id: s4
+    visual: split
+    seconds: 10
+    parts: [60, 30, 10]
+    labels:
+      en: ["Needs", "Wants", "Saved"]
+      hi: ["ज़रूरतें", "चाहतें", "बचत"]
+      ta: ["தேவைகள்", "ஆசைகள்", "சேமிப்பு"]
+    say:
+      en: "Sticker pack, 30 rupees, is a want. And the last 10 rupees go in the piggy bank."
+      hi: "स्टिकर पैक तीस रुपये चाहत है। और बचे दस रुपये गुल्लक में।"
+      ta: "ஸ்டிக்கர் பேக் முப்பது ரூபாய் ஆசை. மீதி பத்து ரூபாய் உண்டியலில்."
+
+  - id: s5
+    visual: outro
+    seconds: 6
+    heading:
+      en: "For education only. Not financial advice."
+      hi: "केवल शिक्षा के लिए। यह वित्तीय सलाह नहीं है।"
+      ta: "கல்விக்காக மட்டும். இது நிதி ஆலோசனை அல்ல."
+    say:
+      en: "Needs first, then wants, then save a little. Follow for more money lessons!"
+      hi: "पहले ज़रूरत, फिर चाहत, और थोड़ा बचत। ऐसे और सबक के लिए फ़ॉलो करो!"
+      ta: "முதலில் தேவை, அப்புறம் ஆசை, கொஞ்சம் சேமிப்பு. இது போன்ற பாடங்களுக்கு ஃபாலோ பண்ணுங்க!"
