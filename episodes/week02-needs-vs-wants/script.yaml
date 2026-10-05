@@ -23,6 +23,7 @@ segments:
     visual: bullets
     seconds: 9
     icons: [bag, bag, bag]
+    props: [notebook, pencils, stickers]
     items:
       en: ["Notebook Rs 40 (need)", "Pencils Rs 20 (need)", "Stickers Rs 30 (want)"]
       hi: ["कॉपी ₹40 (ज़रूरत)", "पेंसिल ₹20 (ज़रूरत)", "स्टिकर ₹30 (चाहत)"]
@@ -48,6 +49,7 @@ segments:
 
   - id: s4
     visual: split
+    fmt: "₹{}"
     seconds: 10
     parts: [60, 30, 10]
     labels:
@@ -61,6 +63,8 @@ segments:
 
   - id: s5
     visual: outro
+    button: "FOLLOW"
+    button_done: "FOLLOWING"
     seconds: 6
     heading:
       en: "For education only. Not financial advice."

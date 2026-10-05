@@ -555,6 +555,25 @@ def item_sprite(kind):
         elif kind == "ball":
             d.ellipse(S(8, 8, 112, 112), fill=POP, outline=INK, width=6 * s)
             d.arc(S(-40, 20, 70, 130), 290, 70, fill=(255, 255, 255), width=10 * s)
+        elif kind == "notebook":
+            d.rounded_rectangle(S(14, 8, 106, 114), 8 * s, fill=(77, 150, 255), outline=INK, width=6 * s)
+            d.rectangle(S(14, 8, 30, 114), fill=(50, 110, 210), outline=INK, width=4 * s)
+            d.rounded_rectangle(S(44, 30, 94, 62), 4 * s, fill=(255, 255, 255), outline=INK, width=3 * s)
+            for yy in (40, 52):
+                d.line(S(50, yy, 88, yy), fill=INK, width=3 * s)
+        elif kind == "pencils":
+            for i, c in enumerate(((255, 200, 40), (240, 90, 90), (88, 190, 102))):
+                x0 = 16 + i * 30
+                d.rectangle(S(x0, 30, x0 + 24, 100), fill=c, outline=INK, width=4 * s)
+                d.polygon(S(x0, 30, x0 + 24, 30, x0 + 12, 6), fill=(250, 222, 180), outline=INK, width=4 * s)
+                d.polygon(S(x0 + 7, 15, x0 + 17, 15, x0 + 12, 6), fill=INK)
+                d.rectangle(S(x0, 100, x0 + 24, 112), fill=(255, 150, 170), outline=INK, width=4 * s)
+        elif kind == "stickers":
+            d.rounded_rectangle(S(8, 12, 112, 108), 10 * s, fill=(255, 255, 255), outline=INK, width=6 * s)
+            d.ellipse(S(20, 24, 56, 60), fill=(255, 210, 60), outline=INK, width=4 * s)
+            d.polygon(S(84, 22, 92, 42, 112, 42, 96, 54, 102, 74, 84, 62, 66, 74, 72, 54, 56, 42, 76, 42), fill=(240, 90, 130), outline=INK, width=3 * s)
+            d.rounded_rectangle(S(24, 70, 60, 98), 8 * s, fill=(88, 190, 102), outline=INK, width=4 * s)
+            d.ellipse(S(72, 80, 98, 98), fill=(77, 150, 255), outline=INK, width=4 * s)
         else:  # book
             d.rounded_rectangle(S(10, 14, 110, 110), 8 * s, fill=(120, 90, 220), outline=INK, width=6 * s)
             d.rectangle(S(24, 14, 34, 110), fill=(90, 60, 180))
@@ -1263,7 +1282,7 @@ def make_shots(seg, T):
         def layout(st):
             if st.port:
                 return dict(jx=[215, 540, 865], jar_b=1100, jsc=0.84, tw=1040, tx=540, ty=1068, boy=(540, 1090), env=(540, 1152), tagw=240)
-            return dict(jx=[930, 1270, 1610], jar_b=785, jsc=0.80, tw=1300, tx=1270, ty=752, boy=(420, 975), env=(1270, 838), tagw=300)
+            return dict(jx=[880, 1200, 1520], jar_b=785, jsc=0.80, tw=1300, tx=1200, ty=752, boy=(380, 975), env=(1200, 838), tagw=300)
 
         def table_scene(local, dur, st, zoomed=False):
             L = layout(st)
@@ -1308,7 +1327,7 @@ def make_shots(seg, T):
                     place(act, tag, x, L["jar_b"] - jh * 0.62, 1.0 if zoomed else pop(local, 0.15 + 0.12 * j), rot=-3 + 3 * j)
                     done_t = 0.55 + (sum(n_notes[:j + 1]) - 1) * fly + 0.45
                     if zoomed or local > done_t:
-                        pc = text_img(f"{parts[j]}%", st.P(84, 80), fill=(255, 255, 255), stroke=9, stroke_fill=INK, shadow=5)
+                        pc = text_img(seg.get("fmt", "{}%").format(parts[j]), st.P(84, 80), fill=(255, 255, 255), stroke=9, stroke_fill=INK, shadow=5)
                         sc = 1.0 + (0.06 * math.sin(local * 6 + j) if zoomed else 0)
                         place(act, pc, x, L["jar_b"] - jh * 0.25, sc if zoomed else pop(local, done_t))
                 ex, ey = L["env"]
@@ -1329,11 +1348,11 @@ def make_shots(seg, T):
 
         def think_extra(fr, st, local):
             for j in range(len(parts)):
-                pc = text_img(f"{parts[j]}%", 130, fill=cols[j % 4], stroke=12, stroke_fill=INK, shadow=8)
+                pc = text_img(seg.get("fmt", "{}%").format(parts[j]), 130, fill=cols[j % 4], stroke=12, stroke_fill=INK, shadow=8)
                 if st.port:
                     px, py = 200 + 340 * j, 470 + 70 * (j % 2)
                 else:
-                    px, py = 1250 + 230 * j, 300 + 170 * j
+                    px, py = 1150 + 220 * j, 300 + 170 * j
                 place(fr, pc, px, py + 8 * math.sin(local * 4 + j), pop(local, 0.15 + 0.15 * j), rot=-8)
         rest = T - sum(s.dur for s in shots)
         think = close_up("think", ((255, 200, 80), (255, 220, 120)), extra=think_extra, side=0)
@@ -1458,13 +1477,17 @@ def make_shots(seg, T):
                         sc = st.P(0.85, 0.85)
                         ground(act, px, pf - 4, 340 * sc)
                         place(act, bag_sprite(), px, pf, sc, anchor="bottom")
-                        for q, kind in enumerate(("apple", "ball", "book")):
+                        kinds = seg.get("props")
+                        kinds = ([kinds[k]] if isinstance(kinds[k], str) else list(kinds[k])) if kinds and k < len(kinds) else ["apple", "ball", "book"]
+                        m = len(kinds)
+                        for q, kind in enumerate(kinds):
+                            off = (q - (m - 1) / 2) * 60
                             st_q = 0.4 + q * 0.35
                             p = clamp((local - st_q) / 0.4)
                             if 0 < p < 1:
-                                place(act, item_sprite(kind), px - 60 + 60 * q, pf - 380 * sc - 260 * (1 - ease_io(p)), 1.0, rot=90 * p)
+                                place(act, item_sprite(kind), px + off, pf - 380 * sc - 260 * (1 - ease_io(p)), 1.15 if m == 1 else 1.0, rot=90 * p)
                             elif p >= 1:
-                                place(act, item_sprite(kind), px - 60 + 60 * q, pf - 330 * sc - 6 * q, 0.9, rot=-10 + 10 * q)
+                                place(act, item_sprite(kind), px + off, pf - 330 * sc - 6 * q, 1.05 if m == 1 else 0.9, rot=-10 + 10 * q)
                         place(act, bag_sprite().crop((0, 110, 340, 380)), px, pf, sc, anchor="bottom")
                 def ui(fr):
                     place(fr, ban, st.w / 2 if st.port else 1180, st.P(370, 130), pop(local, 0.05, 0.35))
@@ -1485,7 +1508,7 @@ def make_shots(seg, T):
 
     elif v == "outro":
         note_txt = caps(t(seg["heading"]))
-        btn, btn_done, bell = button_sprite("SUBSCRIBE"), button_sprite("SUBSCRIBED", pressed=True), bell_sprite()
+        btn, btn_done, bell = button_sprite(seg.get("button", "SUBSCRIBE")), button_sprite(seg.get("button_done", "SUBSCRIBED"), pressed=True), bell_sprite()
 
         def sub(local, dur, st):
             foot = st.P(1470, 985)
