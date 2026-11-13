@@ -18,8 +18,8 @@ Planning doc (with review suggestions): https://claude.ai/artifact/TPjHDPQbprY6J
 
 ## Style
 Character sheet first, then attach it to every shot prompt.
-Master style line (suggested wording, replaces "Ghibli-inspired" in the doc):
-`Hand-painted 2D animation-film look, painterly illustration, semi-realistic, warm golden-hour light, rural Tamil Nadu village, soft watercolor texture, 16:9, no text, same characters as the reference image`
+Master style line (Ghibli-inspired art style, as chosen):
+`Ghibli-inspired painterly illustration, semi-realistic, warm golden-hour light, rural Tamil Nadu village, soft watercolor texture, 16:9, no text, same characters as the reference image`
 
 ## Beats, Tamil voice-over (draft, creator to adjust) and English captions
 | # | Scene | Tamil | English |

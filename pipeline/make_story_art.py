@@ -26,7 +26,7 @@ models = [m for m in [os.environ.get("MODEL"), "gpt-image-2.5-sunburst", "gpt-im
                       "gpt-image-1.5", "gpt-image-1"] if m]
 
 SHEET_PROMPT = (
-    "Character reference sheet, hand-painted 2D animation-film look, painterly illustration, "
+    "Character reference sheet, Ghibli-inspired painterly illustration, "
     "semi-realistic, soft watercolor texture. Left: a 10-year-old Tamil village girl with a long "
     "braid with jasmine flowers, yellow pavadai-davani, silver anklets, front view, side view, "
     "and three expressions (smiling, curious, surprised). Right: a 62-year-old Tamil potter, "
