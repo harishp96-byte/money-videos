@@ -1,0 +1,41 @@
+name: Make ASMR sounds
+on:
+  workflow_dispatch:
+    inputs:
+      only:
+        description: "Comma list of sound names (blank = all)"
+        required: false
+        default: ""
+      steps:
+        description: "Diffusion steps (more = better, slower)"
+        required: false
+        default: "50"
+jobs:
+  sfx:
+    runs-on: ubuntu-latest
+    timeout-minutes: 340
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - name: Install engine
+        run: |
+          sudo apt-get update && sudo apt-get install -y libsndfile1 ffmpeg
+          pip install torch torchaudio --index-url https://download.pytorch.org/whl/cpu
+          pip install stable-audio-tools
+      - name: Generate sounds
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          ONLY: ${{ inputs.only }}
+          STEPS: ${{ inputs.steps }}
+        run: python pipeline/make_sfx.py
+      - name: Commit sounds
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@users.noreply.github.com"
+          git add audio-library/generated
+          git commit -m "Add generated ASMR sounds" || echo "nothing new"
+          git pull --rebase origin main && git push origin HEAD:main

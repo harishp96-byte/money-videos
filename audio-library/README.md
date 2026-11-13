@@ -15,3 +15,8 @@ Only sounds that are safe to use on a monetised channel live here.
 ## Still missing (no free GitHub source found)
 Real ASMR: clay squelch, sieve/grain, kiln crackle, footsteps on dirt, birds, temple bell, boiling milk.
 Get these as CC0 from OpenGameArt / Freesound (filter licence = CC0), drop into `cc0-freesound/` and note each in `SOURCES.md`.
+
+## Generated sounds (engine)
+`pipeline/make_sfx.py` + `.github/workflows/make-sfx.yml` run Stable Audio Open on a free GitHub Actions CPU runner and save WAVs to `audio-library/generated/`.
+Needs repo secret `HF_TOKEN` (Hugging Face token; accept the Stable Audio Open licence on its model page first).
+Woosh (Sony) was rejected: its weights are CC BY-NC (non-commercial).
