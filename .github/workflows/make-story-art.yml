@@ -1,0 +1,44 @@
+# Makes the pictures for a story with OpenAI. COSTS MONEY per picture.
+# Run by hand: Actions -> Make story art -> Run workflow.
+# Step 1: part = sheet (one picture). Look at it, then step 2: part = shots, a few beats at a time.
+name: Make story art
+on:
+  workflow_dispatch:
+    inputs:
+      part:
+        description: "sheet = character sheet only, shots = scene pictures"
+        required: true
+        default: "sheet"
+      beats:
+        description: "For shots: 1-3, 5, 1,4,9 or all (5 pictures per beat)"
+        required: false
+        default: "1"
+      quality:
+        description: "low, medium or high (low is cheapest)"
+        required: false
+        default: "low"
+permissions:
+  contents: write
+jobs:
+  art:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip install openai
+      - name: Make pictures
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          PART: ${{ github.event.inputs.part }}
+          BEATS: ${{ github.event.inputs.beats }}
+          QUALITY: ${{ github.event.inputs.quality }}
+        run: python pipeline/make_story_art.py
+      - name: Save results into the repo
+        if: always()
+        run: |
+          git config user.name "art-bot"; git config user.email "art-bot@users.noreply.github.com"
+          git add stories
+          git commit -m "Story art: ${{ github.event.inputs.part }} ${{ github.event.inputs.beats }}" || echo "nothing to commit"
+          git pull --rebase origin main && git push origin HEAD:main
